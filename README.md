@@ -1,2 +1,9 @@
 # decai-fe
-Decentralized AI Frontend Demo
+
+Open Sourced Decentralized AI Frontend Demo
+
+# how to run
+
+`npm ci`
+
+`npm start`
