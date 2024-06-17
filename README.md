@@ -7,3 +7,9 @@ Open Sourced Decentralized AI Frontend Demo
 `npm ci`
 
 `npm start`
+
+# tech stack
+
+material UI
+TypeScript
+React
