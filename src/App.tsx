@@ -10,6 +10,9 @@ import styled from "styled-components";
 import axios from "axios";
 import LinearProgress from "@mui/material/LinearProgress";
 import Box from "@mui/material/Box";
+import LoginButton from "./LoginButton";
+import LogoutButton from "./LogoutButton";
+import { useAuth0 } from "@auth0/auth0-react";
 
 // Define the type for the input data
 interface DataPoint {
@@ -67,6 +70,7 @@ const ControlGroupContainer = styled.div`
 `;
 
 const ResultChartContainer = styled.div`
+  width: 100%;
   margin-top: 20px;
 `;
 
@@ -76,14 +80,23 @@ const FormControlContainer = styled.div`
   justify-content: center;
 `;
 
-const ChartsContainer = styled.div``;
+const ChartsContainer = styled.div`
+  margin: 0 20px;
+`;
 const ChartsSecondaryContainer = styled.div`
   display: flex;
   flex-directio: row;
 `;
 
+const UserProfileContainer = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
 const MAX_NUM_OF_CLIENTS = 1; // FIXME: use 1 for now.
 const RETRY_WAIT_TIME_MS = 4000;
+const DOMAIN = "";
+// const DOMAIN = "http://matlaber2.media.mit.edu:8888";
 
 const App = () => {
   const [hastrainingStarted, setHasTrainingStarted] = useState(false);
@@ -97,12 +110,13 @@ const App = () => {
     train_loss: [],
     train_acc: [],
   });
+  const { user, isAuthenticated, isLoading } = useAuth0();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          `/api/experiment-plots/?user=${clientId}`
+          `${DOMAIN}/api/experiment-plots/?user=${clientId}`
         );
 
         const responseSclarLength = Object.keys(
@@ -158,7 +172,7 @@ const App = () => {
     setHasTrainingStarted(true);
 
     axios
-      .get("/api/spawn-client/")
+      .get(`${DOMAIN}/api/spawn-client/`)
       .then((response) => {
         console.log("Training started:", response.data); // Log response data from the server
         setClientId(response.data.client_id);
@@ -250,6 +264,88 @@ const App = () => {
 
   const canPushSpawnButton = numOfClients < MAX_NUM_OF_CLIENTS;
 
+  const renderControlAndResult = () => {
+    if (isLoading) {
+      return <div>Loading ...</div>;
+    }
+
+    if (!isAuthenticated) {
+      return <LoginButton />;
+    } else {
+      return (
+        <>
+          <UserProfileContainer>
+            {user && <h2>Welcome, {user?.name}!</h2>}
+            <LogoutButton />
+          </UserProfileContainer>
+          <h3>Remaining tokens: 100</h3>
+          <FormControlContainer>
+            <FormControl sx={{ m: 1, minWidth: 220 }} disabled>
+              <InputLabel id="demo-simple-select-disabled-label">
+                num_clients
+              </InputLabel>
+              <Select
+                labelId="demo-simple-select-disabled-label"
+                id="demo-simple-select-disabled"
+                value={option}
+                label="Option"
+                onChange={handleChange}
+              ></Select>
+              <FormHelperText>default: 10</FormHelperText>
+            </FormControl>
+
+            <FormControl sx={{ m: 1, minWidth: 220 }} disabled>
+              <InputLabel id="demo-simple-select-disabled-label">
+                exp_type
+              </InputLabel>
+              <Select
+                labelId="demo-simple-select-disabled-label"
+                id="demo-simple-select-disabled"
+                value={option}
+                label="Option"
+                onChange={handleChange}
+              ></Select>
+              <FormHelperText>default: IID</FormHelperText>
+            </FormControl>
+
+            <FormControl sx={{ m: 1, minWidth: 220 }} disabled>
+              <InputLabel id="demo-simple-select-disabled-label">
+                algorithm
+              </InputLabel>
+              <Select
+                labelId="demo-simple-select-disabled-label"
+                id="demo-simple-select-disabled"
+                value={option}
+                label="Option"
+                onChange={handleChange}
+              ></Select>
+              <FormHelperText>default: DARE</FormHelperText>
+            </FormControl>
+          </FormControlContainer>
+          <ControlGroupContainer>
+            <Button
+              variant="contained"
+              color="success"
+              disabled={!canPushSpawnButton}
+              onClick={startTrainingHandler}
+            >
+              {canPushSpawnButton
+                ? "Spawn a new client"
+                : "you've reached the limit"}
+            </Button>
+            <SubTitle>
+              <i>
+                p.s. you can spawn up to {MAX_NUM_OF_CLIENTS}{" "}
+                {MAX_NUM_OF_CLIENTS === 1 ? "client" : "clients"} for the demo.
+              </i>
+            </SubTitle>
+          </ControlGroupContainer>
+          <ResultChartContainer>{renderResultChart()}</ResultChartContainer>
+        </>
+      );
+    }
+  };
+
   return (
     <Container>
       <Logo src={mitMediaLabLogo} alt="MIT Media Lab Logo" />
@@ -262,71 +358,7 @@ const App = () => {
         </i>
       </SubTitle>
 
-      <FormControlContainer>
-        <FormControl sx={{ m: 1, minWidth: 220 }} disabled>
-          <InputLabel id="demo-simple-select-disabled-label">
-            num_clients
-          </InputLabel>
-          <Select
-            labelId="demo-simple-select-disabled-label"
-            id="demo-simple-select-disabled"
-            value={option}
-            label="Option"
-            onChange={handleChange}
-          ></Select>
-          <FormHelperText>default: 10</FormHelperText>
-        </FormControl>
-
-        <FormControl sx={{ m: 1, minWidth: 220 }} disabled>
-          <InputLabel id="demo-simple-select-disabled-label">
-            exp_type
-          </InputLabel>
-          <Select
-            labelId="demo-simple-select-disabled-label"
-            id="demo-simple-select-disabled"
-            value={option}
-            label="Option"
-            onChange={handleChange}
-          ></Select>
-          <FormHelperText>default: IID</FormHelperText>
-        </FormControl>
-
-        <FormControl sx={{ m: 1, minWidth: 220 }} disabled>
-          <InputLabel id="demo-simple-select-disabled-label">
-            algorithm
-          </InputLabel>
-          <Select
-            labelId="demo-simple-select-disabled-label"
-            id="demo-simple-select-disabled"
-            value={option}
-            label="Option"
-            onChange={handleChange}
-          ></Select>
-          <FormHelperText>default: DARE</FormHelperText>
-        </FormControl>
-      </FormControlContainer>
-
-      {/* /////////////////////////////// */}
-      <ControlGroupContainer>
-        <Button
-          variant="contained"
-          color="success"
-          disabled={!canPushSpawnButton}
-          onClick={startTrainingHandler}
-        >
-          {canPushSpawnButton
-            ? "Spawn a new client"
-            : "you've reached the limit"}
-        </Button>
-        <SubTitle>
-          <i>
-            p.s. you can spawn up to {MAX_NUM_OF_CLIENTS}{" "}
-            {MAX_NUM_OF_CLIENTS === 1 ? "client" : "clients"} for the demo.
-          </i>
-        </SubTitle>
-      </ControlGroupContainer>
-
-      <ResultChartContainer>{renderResultChart()}</ResultChartContainer>
+      {renderControlAndResult()}
     </Container>
   );
 };
