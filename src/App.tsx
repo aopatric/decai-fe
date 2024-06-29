@@ -95,8 +95,7 @@ const UserProfileContainer = styled.div`
 
 const MAX_NUM_OF_CLIENTS = 1; // FIXME: use 1 for now.
 const RETRY_WAIT_TIME_MS = 4000;
-const DOMAIN = "";
-// const DOMAIN = "http://matlaber2.media.mit.edu:8888";
+const DOMAIN = process.env.REACT_APP_BACKEND_DOMAIN;
 
 const App = () => {
   const [hastrainingStarted, setHasTrainingStarted] = useState(false);
@@ -201,7 +200,8 @@ const App = () => {
             <b>
               <i>Client 1</i>
             </b>
-            : Training in progress
+            : Training in progress...Please be patient while we fetch the plot
+            data
             <LinearProgress />
           </Box>
         )}

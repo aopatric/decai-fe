@@ -52,6 +52,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "proxy": "http://matlaber7.media.mit.edu:8888"
+  }
 }
