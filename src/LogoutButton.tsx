@@ -13,7 +13,9 @@ const LogoutButton = () => {
       startIcon={<LogoutIcon />}
       sx={{ height: "40px", marginLeft: "20px" }}
       onClick={() =>
-        logout({ returnTo: window.location.origin } as LogoutOptions)
+        logout({
+          returnTo: process.env.REACT_APP_AUTH0_LOGOUT_REDIRECT_URI,
+        } as LogoutOptions)
       }
     >
       Log Out
