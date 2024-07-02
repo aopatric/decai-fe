@@ -12,11 +12,7 @@ const LogoutButton = () => {
       variant="outlined"
       startIcon={<LogoutIcon />}
       sx={{ height: "40px", marginLeft: "20px" }}
-      onClick={() =>
-        logout({
-          returnTo: process.env.REACT_APP_AUTH0_LOGOUT_REDIRECT_URI,
-        } as LogoutOptions)
-      }
+      onClick={() => logout()}
     >
       Log Out
     </Button>
