@@ -93,7 +93,7 @@ const UserProfileContainer = styled.div`
   align-items: center;
 `;
 
-const MAX_NUM_OF_CLIENTS = 1; // FIXME: use 1 for now.
+const MAX_NUM_OF_CLIENTS = 5;
 const RETRY_WAIT_TIME_MS = 4000;
 const DOMAIN = process.env.REACT_APP_BACKEND_DOMAIN;
 
@@ -335,8 +335,7 @@ const App = () => {
             </Button>
             <SubTitle>
               <i>
-                p.s. you can spawn up to {MAX_NUM_OF_CLIENTS}{" "}
-                {MAX_NUM_OF_CLIENTS === 1 ? "client" : "clients"} for the demo.
+                p.s. you can spawn up to {MAX_NUM_OF_CLIENTS} clients for the demo.
               </i>
             </SubTitle>
           </ControlGroupContainer>
