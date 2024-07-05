@@ -6,6 +6,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 const LogoutButton = () => {
   const { logout } = useAuth0();
   const returnToUrl = process.env.REACT_APP_AUTH0_LOGOUT_REDIRECT_URI;
+  console.log("returnToUrl", returnToUrl);
 
   return (
     <Button
