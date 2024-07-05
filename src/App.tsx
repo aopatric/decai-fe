@@ -93,77 +93,86 @@ const UserProfileContainer = styled.div`
   align-items: center;
 `;
 
-const MAX_NUM_OF_CLIENTS = 5;
-const RETRY_WAIT_TIME_MS = 4000;
+const TOKEN_COST_PER_CLIENT = 20;
+const RETRY_WAIT_TIME_MS = 10000; // 10s
 const DOMAIN = process.env.REACT_APP_BACKEND_DOMAIN;
 
 const App = () => {
-  const [hastrainingStarted, setHasTrainingStarted] = useState(false);
+  const [hasTrainingStarted, setHasTrainingStarted] = useState(false);
   const [isTrainingCompleted, setIsTrainingCompleted] = useState(false);
   const [numOfClients, setNumOfClients] = useState(0);
   const [option, setOption] = useState("");
-  const [clientId, setClientId] = useState();
-  const [scalarData, setScalarData] = useState<ScalarData>({
-    test_loss: [],
-    test_acc: [],
-    train_loss: [],
-    train_acc: [],
-  });
+  const [currentClientIndex, setCurrentClientIndex] = useState<number>(0);
+  const [clientIds, setClientIds] = useState<string[]>([]);
+  const [scalarData, setScalarData] = useState<ScalarData[]>([
+    {
+      test_loss: [],
+      test_acc: [],
+      train_loss: [],
+      train_acc: [],
+    },
+  ]);
   const { user, isAuthenticated, isLoading } = useAuth0();
+  const [token, setToken] = useState<number>(100);
+  let getRemainingNumOfClients = () =>
+    Math.floor(token / TOKEN_COST_PER_CLIENT);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const intervalIds: NodeJS.Timeout[] = [];
+
+    const fetchDataForClient = async (clientId: string, idx: number) => {
       try {
         const response = await axios.get(
           `${DOMAIN}/api/experiment-plots/?user=${clientId}`
         );
 
-        const responseSclarLength = Object.keys(
-          response?.data?.scalar_data
-        ).length;
-        const responseTestLossLength =
-          response?.data?.scalar_data?.test_loss?.length;
-        const currentTestLossLength = scalarData?.test_loss?.length;
-        if (response.data && responseSclarLength !== 0) {
-          // case 1: with data
-
-          // case 1.1: data < 100
-          // case 1.1.1: responseTestLossLength is the same as in the response, retry
-          // case 1.1.2: responseTestLossLength is different, setScalarData, retry
+        const responseScalarData = response.data?.scalar_data;
+        if (
+          responseScalarData &&
+          Object.keys(responseScalarData).length !== 0
+        ) {
+          const responseTestLossLength = responseScalarData.test_loss?.length;
+          const currentTestLossLength = scalarData[idx]?.test_loss?.length;
 
           if (responseTestLossLength < 100) {
             if (responseTestLossLength !== currentTestLossLength) {
-              setScalarData(response?.data?.scalar_data);
+              setScalarData((prevData) => {
+                const newData = [...prevData];
+                newData[idx] = responseScalarData;
+                return newData;
+              });
             }
-
-            setTimeout(fetchData, RETRY_WAIT_TIME_MS);
           } else {
-            setScalarData(response?.data?.scalar_data);
             setIsTrainingCompleted(true);
+            clearInterval(intervalIds[idx]);
           }
         } else {
-          // case: no data
           console.log("Data is empty, retrying...");
-          setTimeout(fetchData, RETRY_WAIT_TIME_MS);
         }
       } catch (error) {
-        // case: error
         console.error("Error fetching data:", error);
-        setTimeout(fetchData, RETRY_WAIT_TIME_MS); // Retry after RETRY_WAIT_TIME_MS seconds in case of error
       }
     };
 
-    if (clientId) {
-      fetchData();
-    }
-  }, [clientId]);
+    clientIds.forEach((clientId, idx) => {
+      if (!intervalIds[idx]) {
+        intervalIds[idx] = setInterval(() => {
+          fetchDataForClient(clientId, idx);
+        }, RETRY_WAIT_TIME_MS);
+      }
+    });
+
+    return () => {
+      intervalIds.forEach(clearInterval);
+    };
+  }, [clientIds]);
 
   const handleChange = (event: SelectChangeEvent) => {
     setOption(event.target.value);
   };
 
   const startTrainingHandler = () => {
-    if (numOfClients >= MAX_NUM_OF_CLIENTS) {
+    if (getRemainingNumOfClients() === 0) {
       return;
     }
 
@@ -174,31 +183,34 @@ const App = () => {
       .get(`${DOMAIN}/api/spawn-client/`)
       .then((response) => {
         console.log("Training started:", response.data); // Log response data from the server
-        setClientId(response.data.client_id);
+        setClientIds([...clientIds, response.data.client_id]);
+
+        setCurrentClientIndex(currentClientIndex + 1);
+        setToken(token - TOKEN_COST_PER_CLIENT);
       })
       .catch((error) => {
         console.error("Error starting training:", error);
       });
   };
 
-  const renderResultChart = () => {
-    const testLoss = splitStepAndValue(scalarData?.test_loss);
-    const testAcc = splitStepAndValue(scalarData?.test_acc);
-    const trainLoss = splitStepAndValue(scalarData?.train_loss);
-    const trainAcc = splitStepAndValue(scalarData?.train_acc);
-    return hastrainingStarted ? (
+  const renderResultChart = (idx: number) => {
+    const testLoss = splitStepAndValue(scalarData[idx]?.test_loss);
+    const testAcc = splitStepAndValue(scalarData[idx]?.test_acc);
+    const trainLoss = splitStepAndValue(scalarData[idx]?.train_loss);
+    const trainAcc = splitStepAndValue(scalarData[idx]?.train_acc);
+    return hasTrainingStarted ? (
       <ChartsContainer>
         {isTrainingCompleted ? (
           <Box sx={{ width: "100%" }}>
             <b>
-              <i>Client 1</i>
+              <i>Client {idx}</i>
             </b>
             : Training complete
           </Box>
         ) : (
           <Box sx={{ width: "100%" }}>
             <b>
-              <i>Client 1</i>
+              <i>Client {idx + 1}</i>
             </b>
             : Training in progress...Please be patient while we fetch the plot
             data
@@ -262,7 +274,7 @@ const App = () => {
     ) : null;
   };
 
-  const canPushSpawnButton = numOfClients < MAX_NUM_OF_CLIENTS;
+  const canPushSpawnButton = getRemainingNumOfClients() > 0;
 
   const renderControlAndResult = () => {
     if (isLoading) {
@@ -278,7 +290,16 @@ const App = () => {
             {user && <h2>Welcome, {user?.name}!</h2>}
             <LogoutButton />
           </UserProfileContainer>
-          <h3>Remaining tokens: 100</h3>
+          <SubTitle>
+            <b>Remaining tokens:</b> {token}
+            <br />
+            <b>Cost to spawn up a new client:</b> {TOKEN_COST_PER_CLIENT}
+            <br />
+            <i>
+              i.e. you remaining tokens can still spawn up to{" "}
+              {getRemainingNumOfClients()} clients.
+            </i>
+          </SubTitle>
           <FormControlContainer>
             <FormControl sx={{ m: 1, minWidth: 220 }} disabled>
               <InputLabel id="demo-simple-select-disabled-label">
@@ -333,13 +354,12 @@ const App = () => {
                 ? "Spawn a new client"
                 : "you've reached the limit"}
             </Button>
-            <SubTitle>
-              <i>
-                p.s. you can spawn up to {MAX_NUM_OF_CLIENTS} clients for the demo.
-              </i>
-            </SubTitle>
           </ControlGroupContainer>
-          <ResultChartContainer>{renderResultChart()}</ResultChartContainer>
+          {clientIds.map((_, idx) => (
+            <ResultChartContainer>
+              {renderResultChart(idx)}
+            </ResultChartContainer>
+          ))}
         </>
       );
     }
