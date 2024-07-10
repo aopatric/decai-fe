@@ -20,7 +20,7 @@ const LogoutButton = () => {
       variant="outlined"
       startIcon={<LogoutIcon />}
       sx={{ height: "40px", marginLeft: "20px" }}
-      onClick={() => logout({ returnTo: returnToUrl } as LogoutOptions)}
+      // onClick={() => logout({ returnTo: returnToUrl } as LogoutOptions)}
     >
       Log Out
     </Button>
