@@ -13,6 +13,7 @@ import Box from "@mui/material/Box";
 import LoginButton from "./LoginButton";
 import LogoutButton from "./LogoutButton";
 import { useAuth0 } from "@auth0/auth0-react";
+import { setTokenSourceMapRange } from "typescript";
 
 // Define the type for the input data
 interface DataPoint {
@@ -113,9 +114,35 @@ const App = () => {
     },
   ]);
   const { user, isAuthenticated, isLoading } = useAuth0();
-  const [token, setToken] = useState<number>(100);
-  let getRemainingNumOfClients = () =>
-    Math.floor(token / TOKEN_COST_PER_CLIENT);
+  const [token, setToken] = useState<number>(0);
+  const [remainingNumOfClients, setRemainingNumOfClients] = useState<number>(
+    token / TOKEN_COST_PER_CLIENT
+  );
+  const [isLoadingToken, setIsLoadingToken] = useState<boolean>(false);
+
+  useEffect(() => {
+    setRemainingNumOfClients(Math.floor(token / TOKEN_COST_PER_CLIENT));
+  }, [token]);
+
+  // fetch the remaining tokens on the first page load
+  const fetchToken = async () => {
+    setIsLoadingToken(true);
+    const response = await axios
+      .get(`${DOMAIN}/api/get_tokens?email=${user?.email}`)
+      .finally(() => {
+        setIsLoadingToken(false);
+      });
+    const tokens = response?.data?.tokens;
+    if (typeof tokens === "number") {
+      setToken(tokens);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.email) {
+      fetchToken();
+    }
+  }, [user?.email]);
 
   useEffect(() => {
     const intervalIds: NodeJS.Timeout[] = [];
@@ -123,7 +150,7 @@ const App = () => {
     const fetchDataForClient = async (clientId: string, idx: number) => {
       try {
         const response = await axios.get(
-          `${DOMAIN}/api/experiment-plots/?user=${clientId}`
+          `${DOMAIN}/api/experiment_plots/?user=${clientId}`
         );
 
         const responseScalarData = response.data?.scalar_data;
@@ -172,7 +199,7 @@ const App = () => {
   };
 
   const startTrainingHandler = () => {
-    if (getRemainingNumOfClients() === 0) {
+    if (remainingNumOfClients <= 0) {
       return;
     }
 
@@ -180,13 +207,21 @@ const App = () => {
     setHasTrainingStarted(true);
 
     axios
-      .get(`${DOMAIN}/api/spawn-client/`)
+      .post(`${DOMAIN}/api/spawn_client/`)
       .then((response) => {
-        console.log("Training started:", response.data); // Log response data from the server
         setClientIds([...clientIds, response.data.client_id]);
 
         setCurrentClientIndex(currentClientIndex + 1);
-        setToken(token - TOKEN_COST_PER_CLIENT);
+
+        // if no error, we deduct tokens
+        axios
+          .post(`${DOMAIN}/api/consume_tokens`, {
+            consumed_amt: TOKEN_COST_PER_CLIENT,
+            email: user?.email,
+          })
+          .then(async () => {
+            await fetchToken();
+          });
       })
       .catch((error) => {
         console.error("Error starting training:", error);
@@ -274,7 +309,7 @@ const App = () => {
     ) : null;
   };
 
-  const canPushSpawnButton = getRemainingNumOfClients() > 0;
+  const canPushSpawnButton = remainingNumOfClients > 0;
 
   const renderControlAndResult = () => {
     if (isLoading) {
@@ -291,13 +326,13 @@ const App = () => {
             <LogoutButton />
           </UserProfileContainer>
           <SubTitle>
-            <b>Remaining tokens:</b> {token}
+            <b>Remaining tokens:</b> {isLoadingToken ? "loading..." : token}
             <br />
             <b>Cost to spawn up a new client:</b> {TOKEN_COST_PER_CLIENT}
             <br />
             <i>
               i.e. you remaining tokens can still spawn up to{" "}
-              {getRemainingNumOfClients()} clients.
+              {remainingNumOfClients} clients.
             </i>
           </SubTitle>
           <FormControlContainer>

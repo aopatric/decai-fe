@@ -14,8 +14,6 @@ const LogoutButton = () => {
     );
   }
 
-  console.log("returnToUrl", returnToUrl);
-
   return (
     <Button
       color="success"
