@@ -65,7 +65,7 @@ const Logo = styled.img`
 
 const ControlGroupContainer = styled.div`
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   flex-wrap: wrap;
   justify-content: center;
 `;
@@ -222,6 +222,21 @@ const App = () => {
           .then(async () => {
             await fetchToken();
           });
+      })
+      .catch((error) => {
+        console.error("Error starting training:", error);
+      });
+  };
+
+  const earnTokens = () => {
+    // if no error, we deduct tokens
+    axios
+      .post(`${DOMAIN}/api/reload_tokens`, {
+        reload_amt: TOKEN_COST_PER_CLIENT,
+        email: user?.email,
+      })
+      .then(async () => {
+        await fetchToken();
       })
       .catch((error) => {
         console.error("Error starting training:", error);
@@ -388,6 +403,14 @@ const App = () => {
               {canPushSpawnButton
                 ? "Spawn a new client"
                 : "you've reached the limit"}
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={earnTokens}
+              style={{ marginLeft: "10px" }}
+            >
+              Earn tokens
             </Button>
           </ControlGroupContainer>
           {clientIds.map((_, idx) => (
