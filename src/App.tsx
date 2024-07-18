@@ -13,7 +13,7 @@ import Box from "@mui/material/Box";
 import LoginButton from "./LoginButton";
 import LogoutButton from "./LogoutButton";
 import { useAuth0 } from "@auth0/auth0-react";
-import { setTokenSourceMapRange } from "typescript";
+import Alert from "@mui/material/Alert";
 
 // Define the type for the input data
 interface DataPoint {
@@ -101,6 +101,7 @@ const DOMAIN = process.env.REACT_APP_BACKEND_DOMAIN;
 const App = () => {
   const [hasTrainingStarted, setHasTrainingStarted] = useState(false);
   const [isTrainingCompleted, setIsTrainingCompleted] = useState(false);
+  const [showTokenAlert, setShowTokenAlert] = useState<boolean>(false);
   const [numOfClients, setNumOfClients] = useState(0);
   const [option, setOption] = useState("");
   const [currentClientIndex, setCurrentClientIndex] = useState<number>(0);
@@ -126,15 +127,21 @@ const App = () => {
 
   // fetch the remaining tokens on the first page load
   const fetchToken = async () => {
-    setIsLoadingToken(true);
-    const response = await axios
-      .get(`${DOMAIN}/api/get_tokens?email=${user?.email}`)
-      .finally(() => {
-        setIsLoadingToken(false);
-      });
-    const tokens = response?.data?.tokens;
-    if (typeof tokens === "number") {
-      setToken(tokens);
+    try {
+      setIsLoadingToken(true);
+      const response = await axios
+        .get(`${DOMAIN}/api/get_or_init_tokens?email=${user?.email}`)
+        .finally(() => {
+          setIsLoadingToken(false);
+        });
+      const tokens = response?.data?.tokens;
+      if (typeof tokens === "number") {
+        setToken(tokens);
+      } else {
+        setShowTokenAlert(true);
+      }
+    } catch {
+      setShowTokenAlert(true);
     }
   };
 
@@ -425,6 +432,16 @@ const App = () => {
 
   return (
     <Container>
+      {showTokenAlert && (
+        <Alert
+          severity="warning"
+          onClose={() => {
+            setShowTokenAlert(false);
+          }}
+        >
+          Something went wrong with token fetching. Please try again later.
+        </Alert>
+      )}
       <Logo src={mitMediaLabLogo} alt="MIT Media Lab Logo" />
       <Title>Decentralized AI Demo</Title>
       <SubTitle>
