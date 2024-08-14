@@ -11,7 +11,7 @@ function App() {
     const numRows = 28;
     const numCols = 28;
 
-    const lossNodeName = "onnx::loss::8";
+    const lossNodeName = "onnx::loss::14";
 
     const logIntervalMs = 1000;
     const waitAfterLoggingMs = 500;
@@ -120,7 +120,7 @@ function App() {
         let result = 0;
         const predictions = getPredictions(output);
         for (let i = 0; i < predictions.length; ++i) {
-            if (BigInt(predictions[i]) === labels.data[i]) {
+            if (Number(BigInt(predictions[i])) === Number(labels.data[i])) { // Convert both to numbers
                 ++result;
             }
         }
@@ -164,7 +164,6 @@ function App() {
             throw err;
         }
     };
-
     async function updateDigitPredictions(session: ort.TrainingSession) {
         const input = new Float32Array(digits.length * numRows * numCols);
         const batchShape = [digits.length, numRows * numCols];
@@ -174,18 +173,19 @@ function App() {
             for (let j = 0; j < pixels.length; ++j) {
                 input[i * pixels.length + j] = MnistData.normalize(pixels[j]);
             }
-            labels.push(BigInt(digits[i].label));
+            labels.push(Number(BigInt(digits[i].label)));  // Convert BigInt to number here
         }
-
+    
         const feeds = {
             input: new ort.Tensor('float32', input, batchShape),
-            labels: new ort.Tensor('int64', new BigInt64Array(labels), [digits.length])
+            labels: new ort.Tensor('int64', new BigInt64Array(labels.map(BigInt)), [digits.length])
         };
-
+    
         const results = await session.runEvalStep(feeds);
         const predictions = getPredictions(results['output']);
         setDigitPredictions(predictions.slice(0, digits.length));
     }
+    
 
     // training & testing functions
     async function runTrainingEpoch(session: ort.TrainingSession, dataSet: MnistData, epoch: number) {
@@ -196,30 +196,33 @@ function App() {
         await logMessage(`TRAINING | Epoch: ${String(epoch + 1).padStart(2)} / ${numEpochs} | Starting training...`)
         for await (const batch of dataSet.trainingBatches()) {
             ++batchNum;
+    
             // create input
             const feeds = {
                 input: batch.data,
                 labels: batch.labels
-            }
-
+            };
+    
             // call train step
             const results = await session.runTrainStep(feeds);
-
-            // updating UI with metrics
-            const loss = parseFloat(results[lossNodeName].data);
-            setTrainingLosses(losses => losses.concat(loss));
+    
+            // update UI with metrics
+            const lossArray = results[lossNodeName].data as Float32Array;
+            const loss = Number(lossArray[0]);
             iterationsPerSecond = batchNum / ((Date.now() - epochStartTime) / 1000);
             const message = `TRAINING | Epoch: ${String(epoch + 1).padStart(2)} | Batch ${String(batchNum).padStart(3)} / ${totalNumBatches} | Loss: ${loss.toFixed(4)} | ${iterationsPerSecond.toFixed(2)} it/s`;
             await logMessage(message);
-
+    
             // update weights then reset gradients
             await session.runOptimizerStep();
             await session.lazyResetGrad();
+    
             // update digit predictions
             await updateDigitPredictions(session);
         }
         return iterationsPerSecond;
     }
+    
 
     async function runTestingEpoch(session: ort.TrainingSession, dataSet: MnistData, epoch: number): Promise<number> {
         let batchNum = 0;
@@ -241,8 +244,15 @@ function App() {
             // call eval step
             const results = await session.runEvalStep(feeds);
 
+            if (!results || !results[lossNodeName] || !results[lossNodeName].data) {
+                console.error("Unexpected results structure:", JSON.stringify(results, null, 2));
+                throw new Error("Invalid results structure.");
+            }
+            
             // update UI with metrics
-            const loss = parseFloat(results[lossNodeName].data);
+            const lossArray = results[lossNodeName].data as Float32Array;
+            const loss = parseFloat(lossArray[0].toString());
+
             accumulatedLoss += loss;
             testPicsSoFar += batch.data.dims[0];
             numCorrect += countCorrectPredictions(results['output'], batch.labels);
