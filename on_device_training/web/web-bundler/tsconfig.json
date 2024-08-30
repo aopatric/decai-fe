@@ -4,6 +4,8 @@
 		"jsx": "react-jsx",
 		"module": "ES2020",
 		"moduleResolution": "bundler",
+		"target": "es2015", // or higher
+		"downlevelIteration": true
 	},
 	"include": [
 		"src"
