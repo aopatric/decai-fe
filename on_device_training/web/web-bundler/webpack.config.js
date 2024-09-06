@@ -1,20 +1,20 @@
 const path = require('path');
-const CopyPlugin = require("copy-webpack-plugin");
+const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = () => {
-	return {
-		// target: ['web'],
+    return {
         context: __dirname,
-		entry: './src/index.tsx',
-		output: {
-			path: path.resolve(__dirname, 'public'),
-			filename: 'bundle.js',
-			library: {
-				type: 'umd'
-			}
-		},
-         module: {
+        entry: './src/index.tsx', // Entry point for your application
+        output: {
+            path: path.resolve(__dirname, 'public'), // Output directory
+            filename: 'bundle.js', // Output filename
+            library: {
+                type: 'umd',
+            },
+            publicPath: '/', // Ensure all assets are served correctly
+        },
+        module: {
             rules: [
                 {
                     test: /\.js$/,
@@ -22,7 +22,7 @@ module.exports = () => {
                     use: {
                         loader: 'babel-loader',
                     },
-                }, 
+                },
                 {
                     test: /\.tsx?$/,
                     use: 'ts-loader',
@@ -31,30 +31,33 @@ module.exports = () => {
                 {
                     test: /\.css$/i,
                     use: ['style-loader', 'css-loader'],
-                }]},
-		plugins: [
-            new CopyPlugin({
-			    patterns: [{ from: 'node_modules/onnxruntime-web/dist/*.wasm', to: '[name][ext]'}]
-		    }), 
-            new HtmlWebpackPlugin({
-                template: './public/index.html'
-        })],
-        devServer: {
-            hot: true,
-            static: {
-                directory: path.join(__dirname, 'public'),
-            },
-            compress: true,
-            port: 9000
+                },
+            ],
         },
-		mode: 'production',
-		resolve: {
-			extensions: ['.ts', '.js', '.tsx'],
-            fallback: {
-                crypto: require.resolve('crypto-browserify'),
-                stream: require.resolve("stream-browserify"),
-                buffer: require.resolve("buffer/"),
-            }
-		}
-	}
+        plugins: [
+            new CopyPlugin({
+                patterns: [
+                    { from: 'node_modules/onnxruntime-web/dist/*.wasm', to: '[name][ext]' }, // Copy WebAssembly files
+                ],
+            }),
+            new HtmlWebpackPlugin({
+                template: './public/index.html', // Template for HTML
+            }),
+        ],
+        devServer: {
+            hot: true, // Enable Hot Module Replacement
+            static: {
+                directory: path.join(__dirname, 'public'), // Directory to serve static files
+            },
+            compress: true, // Enable gzip compression
+            port: 9000, // Port number
+            historyApiFallback: true, // SPA fallback to index.html
+            proxy: {
+                '/datasets': {
+                    target: 'http://localhost:9000', // Change this to the backend server URL and port
+                    changeOrigin: true,
+                },
+            },
+        },
+    };
 };
