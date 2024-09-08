@@ -3,7 +3,7 @@ import React from 'react';
 import './App.css';
 import Plot from 'react-plotly.js';
 import * as ort from 'onnxruntime-web/training';
-import { ImageDataLoader } from './ImageDataLoader'; // Use ImageDataLoader for image classification
+import { ImageDataLoader } from './minst'; // Use ImageDataLoader for image classification
 import { Digit } from './Digit'; // Component to display images
 
 async function loadWasmFiles() {

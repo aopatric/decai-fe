@@ -1,13 +1,14 @@
 {
 	"compilerOptions": {
-		"esModuleInterop": true,
-		"jsx": "react-jsx",
-		"module": "ES2020",
-		"moduleResolution": "bundler",
-		"target": "es2015", // or higher
-		"downlevelIteration": true
+	  "esModuleInterop": true,
+	  "jsx": "react-jsx",
+	  "module": "ES2020",
+	  "moduleResolution": "bundler",
+	  "target": "es5",
+	  "lib": ["dom", "es2015"]
 	},
-	"include": [
-		"src"
-	]
-}
+	"include": ["src/**/*"],
+	"exclude": ["node_modules"]
+  }
+
+  
