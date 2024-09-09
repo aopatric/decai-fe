@@ -456,7 +456,7 @@ const App = () => {
       </SubTitle>
       {renderControlAndResult()}
 
-      <h2>A Dummy Demo of the Visualization</h2>
+      <h2>WIP: Visualization with Dummy Data</h2>
       <CustomNodes />
     </Container>
   );

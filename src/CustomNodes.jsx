@@ -9,17 +9,12 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import ColorSelectorNode from "./ColorSelectorNode";
-
 import "./index.css";
 
 const initBgColor = "#1A192B";
 
 const connectionLineStyle = { stroke: "#fff" };
 const snapGrid = [20, 20];
-const nodeTypes = {
-  selectorNode: ColorSelectorNode,
-};
 
 const defaultViewport = { x: 0, y: 0, zoom: 1.5 };
 
@@ -29,28 +24,6 @@ const CustomNodeFlow = () => {
   const [bgColor, setBgColor] = useState(initBgColor);
 
   useEffect(() => {
-    const onChange = (event) => {
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.id !== "2") {
-            return node;
-          }
-
-          const color = event.target.value;
-
-          setBgColor(color);
-
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              color,
-            },
-          };
-        })
-      );
-    };
-
     setNodes([
       {
         id: "1",
@@ -108,7 +81,6 @@ const CustomNodeFlow = () => {
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       style={{ background: bgColor }}
-      nodeTypes={nodeTypes}
       connectionLineStyle={connectionLineStyle}
       snapToGrid={true}
       snapGrid={snapGrid}
