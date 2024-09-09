@@ -14,6 +14,7 @@ import LoginButton from "./LoginButton";
 import LogoutButton from "./LogoutButton";
 import { useAuth0 } from "@auth0/auth0-react";
 import Alert from "@mui/material/Alert";
+import CustomNodes from "./CustomNodes";
 
 // Define the type for the input data
 interface DataPoint {
@@ -55,6 +56,8 @@ const Container = styled.div`
   flex-direction: column;
   margin: 0 auto;
   max-width: 960px;
+  height: 100vh;
+  margin-bottom: 100px;
 `;
 
 const Logo = styled.img`
@@ -451,8 +454,10 @@ const App = () => {
           collaborative, distributed way via gradient descent in the data space.
         </i>
       </SubTitle>
-
       {renderControlAndResult()}
+
+      <h2>A Dummy Demo of the Visualization</h2>
+      <CustomNodes />
     </Container>
   );
 };
