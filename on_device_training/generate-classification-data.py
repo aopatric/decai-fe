@@ -32,7 +32,7 @@ df = pd.DataFrame(data)
 train_df, test_df = train_test_split(df, test_size=0.1, random_state=42)
 test_df, val_df = train_test_split(test_df, test_size=0.5, random_state=42)
 
-# Function to save DataFrame to JSON
+# Function to save DataFrame to JSON with proper formatting
 def save_to_json(dataframe, file_path):
     data = []
     for _, row in dataframe.iterrows():
@@ -42,7 +42,7 @@ def save_to_json(dataframe, file_path):
         }
         data.append(item)
     with open(file_path, 'w') as f:
-        json.dump(data, f)
+        json.dump(data, f, indent=4)  # Added indent=4 for readable JSON format
 
 # Save the datasets to JSON files
 save_to_json(train_df, os.path.join(data_dir, train_file))
