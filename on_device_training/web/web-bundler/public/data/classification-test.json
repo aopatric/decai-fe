@@ -1,142 +1,726 @@
 [
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0341.jpg",
+        "image_path": "/datasets/Training/notumor/Tr-no_1415.jpg",
         "label": "notumor"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/glioma/Te-gl_0167.jpg",
+        "image_path": "/datasets/Training/notumor/Tr-no_1203.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0312.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0141.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0299.jpg",
         "label": "glioma"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/glioma/Te-gl_0102.jpg",
+        "image_path": "/datasets/Training/notumor/Tr-no_0456.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0719.jpg",
         "label": "glioma"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/glioma/Te-gl_0176.jpg",
+        "image_path": "/datasets/Training/notumor/Tr-no_1194.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0112.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_1176.jpg",
         "label": "glioma"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/glioma/Te-gl_0244.jpg",
+        "image_path": "/datasets/Training/notumor/Tr-no_0693.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/glioma/Te-gl_0115.jpg",
         "label": "glioma"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0238.jpg",
+        "image_path": "/datasets/Training/notumor/Tr-no_0026.jpg",
         "label": "notumor"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0265.jpg",
-        "label": "notumor"
-    },
-    {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0399.jpg",
-        "label": "notumor"
-    },
-    {
-        "image_path": "./web/web-bundler/public/datasets/Testing/glioma/Te-gl_0148.jpg",
+        "image_path": "/datasets/Training/glioma/Tr-gl_1293.jpg",
         "label": "glioma"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0095.jpg",
+        "image_path": "/datasets/Training/notumor/Tr-no_0347.jpg",
         "label": "notumor"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0055.jpg",
+        "image_path": "/datasets/Training/notumor/Tr-no_0549.jpg",
         "label": "notumor"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0320.jpg",
+        "image_path": "/datasets/Training/notumor/Tr-no_0898.jpg",
         "label": "notumor"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/glioma/Te-gl_0164.jpg",
+        "image_path": "/datasets/Training/notumor/Tr-no_0855.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0043.jpg",
         "label": "glioma"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/glioma/Te-gl_0252.jpg",
+        "image_path": "/datasets/Training/glioma/Tr-gl_0330.jpg",
         "label": "glioma"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/glioma/Te-gl_0236.jpg",
+        "image_path": "/datasets/Training/notumor/Tr-no_0060.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0496.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0592.jpg",
         "label": "glioma"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0295.jpg",
+        "image_path": "/datasets/Testing/notumor/Te-no_0308.jpg",
         "label": "notumor"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/glioma/Te-gl_0104.jpg",
+        "image_path": "/datasets/Training/notumor/Tr-no_1431.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0348.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-glTr_0007.jpg",
         "label": "glioma"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0177.jpg",
+        "image_path": "/datasets/Training/notumor/Tr-no_1588.jpg",
         "label": "notumor"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0144.jpg",
-        "label": "notumor"
-    },
-    {
-        "image_path": "./web/web-bundler/public/datasets/Testing/glioma/Te-gl_0240.jpg",
+        "image_path": "/datasets/Training/glioma/Tr-gl_1244.jpg",
         "label": "glioma"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/glioma/Te-gl_0019.jpg",
+        "image_path": "/datasets/Training/glioma/Tr-gl_0886.jpg",
         "label": "glioma"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0248.jpg",
-        "label": "notumor"
-    },
-    {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0343.jpg",
-        "label": "notumor"
-    },
-    {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0337.jpg",
-        "label": "notumor"
-    },
-    {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0116.jpg",
-        "label": "notumor"
-    },
-    {
-        "image_path": "./web/web-bundler/public/datasets/Testing/glioma/Te-gl_0106.jpg",
+        "image_path": "/datasets/Testing/glioma/Te-gl_0203.jpg",
         "label": "glioma"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0297.jpg",
+        "image_path": "/datasets/Training/notumor/Tr-no_1252.jpg",
         "label": "notumor"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/glioma/Te-gl_0250.jpg",
+        "image_path": "/datasets/Training/glioma/Tr-gl_0379.jpg",
         "label": "glioma"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/glioma/Te-gl_0062.jpg",
+        "image_path": "/datasets/Training/glioma/Tr-gl_0423.jpg",
         "label": "glioma"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-noTr_0000.jpg",
+        "image_path": "/datasets/Training/notumor/Tr-no_1345.jpg",
         "label": "notumor"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0099.jpg",
+        "image_path": "/datasets/Testing/notumor/Te-no_0016.jpg",
         "label": "notumor"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0251.jpg",
-        "label": "notumor"
-    },
-    {
-        "image_path": "./web/web-bundler/public/datasets/Testing/glioma/Te-gl_0217.jpg",
+        "image_path": "/datasets/Training/glioma/Tr-gl_1180.jpg",
         "label": "glioma"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0211.jpg",
+        "image_path": "/datasets/Testing/notumor/Te-no_0400.jpg",
         "label": "notumor"
     },
     {
-        "image_path": "./web/web-bundler/public/datasets/Testing/notumor/Te-no_0365.jpg",
+        "image_path": "/datasets/Training/glioma/Tr-gl_0403.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0282.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0877.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1233.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0091.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1522.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0372.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0814.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1280.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0488.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0190.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0355.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0208.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0225.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_1076.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0137.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/glioma/Te-gl_0021.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_1255.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1543.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_1204.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0947.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0858.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1329.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1119.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0404.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0023.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0138.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1375.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0157.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0236.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0778.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0011.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0017.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0562.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1164.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0723.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1071.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0550.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_1245.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0400.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/glioma/Te-gl_0241.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0674.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1161.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_1101.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0485.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0636.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0031.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0608.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1493.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0528.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1505.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0351.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1290.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0821.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/glioma/Te-gl_0253.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0165.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0580.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1048.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1253.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/glioma/Te-gl_0142.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0085.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0436.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1361.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0171.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0200.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0779.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0032.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0286.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0874.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0282.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0124.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1040.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0106.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0180.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0357.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0926.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1585.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_1179.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0372.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0034.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1092.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0951.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0613.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1087.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1342.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0294.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1190.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1572.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0433.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0533.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0032.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_1093.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0602.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0216.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0349.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1292.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0896.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1167.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1541.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0863.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0291.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/glioma/Te-gl_0127.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_1242.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/glioma/Te-gl_0045.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0060.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0249.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0666.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/glioma/Te-gl_0111.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0304.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1488.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0538.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0108.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0396.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0200.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/glioma/Te-gl_0117.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1044.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1350.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0218.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0363.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0189.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1051.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0659.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0574.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1090.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_1230.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0224.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0610.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0960.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1332.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0292.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Testing/notumor/Te-no_0097.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1501.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0082.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1320.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0107.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Testing/glioma/Te-gl_0173.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_1527.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0831.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0495.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0581.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0295.jpg",
+        "label": "notumor"
+    },
+    {
+        "image_path": "/datasets/Training/glioma/Tr-gl_0662.jpg",
+        "label": "glioma"
+    },
+    {
+        "image_path": "/datasets/Training/notumor/Tr-no_0979.jpg",
         "label": "notumor"
     }
 ]

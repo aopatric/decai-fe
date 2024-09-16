@@ -5,7 +5,10 @@ from sklearn.model_selection import train_test_split
 
 # Define directories and files
 data_dir = './web/web-bundler/public/data/'
-image_dir = './web/web-bundler/public/datasets/Testing/'
+image_dirs = {
+    'Testing': './web/web-bundler/public/datasets/Testing/',
+    'Training': './web/web-bundler/public/datasets/Training/'
+}
 train_file = 'classification-train.json'
 test_file = 'classification-test.json'
 val_file = 'classification-validation.json'
@@ -16,14 +19,16 @@ os.makedirs(data_dir, exist_ok=True)
 # Prepare a list to hold all image paths and labels
 data = []
 
-# Traverse the image directory to gather file paths and labels
-for class_name in os.listdir(image_dir):
-    class_path = os.path.join(image_dir, class_name)
-    if os.path.isdir(class_path):  # Ensure it's a directory
-        for img_file in os.listdir(class_path):
-            if img_file.endswith(('.png', '.jpg', '.jpeg')):  # Consider only image files
-                img_path = os.path.join(class_path, img_file)
-                data.append({'image_path': img_path, 'label': class_name})
+# Traverse both directories (Testing and Training) to gather file paths and labels
+for dataset_type, image_dir in image_dirs.items():
+    for class_name in os.listdir(image_dir):
+        class_path = os.path.join(image_dir, class_name)
+        if os.path.isdir(class_path):  # Ensure it's a directory
+            for img_file in os.listdir(class_path):
+                if img_file.endswith(('.png', '.jpg', '.jpeg')):  # Consider only image files
+                    # Construct relative path based on dataset type (Testing or Training)
+                    img_path = os.path.join(f'/datasets/{dataset_type}', class_name, img_file)
+                    data.append({'image_path': img_path, 'label': class_name})
 
 # Convert to DataFrame
 df = pd.DataFrame(data)

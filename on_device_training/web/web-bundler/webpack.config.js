@@ -44,21 +44,23 @@ module.exports = () => {
                 template: './public/index.html', // Template for HTML
             }),
         ],
-        devServer: {
-            hot: true, // Enable Hot Module Replacement
-            static: {
-                directory: path.join(__dirname, 'public'), // Directory to serve static files
-            },
-            compress: true, // Enable gzip compression
-            port: 9000, // Port number
-            historyApiFallback: true, // SPA fallback to index.html
-            proxy: {
-                '/datasets': {
-                    target: 'http://localhost:9000', // Change this to the backend server URL and port
-                    changeOrigin: true,
-                },
-            },
-        },
+        // devServer: {
+        //     hot: true, // Enable Hot Module Replacement
+        //     static: {
+        //         directory: path.join(__dirname, 'public'), // Directory to serve static files
+        //         publicPath: '/', // Serve files from the root path
+        //     },
+        //     compress: true, // Enable gzip compression
+        //     port: 9000, // Port number
+        //     historyApiFallback: true, // SPA fallback to index.html
+        //     proxy: {
+        //         '/datasets': {
+        //             target: 'http://localhost:9000', // Ensure this matches the backend or file server
+        //             pathRewrite: { '^/datasets': '/datasets' }, // Ensure the path is correctly rewritten
+        //             changeOrigin: true,
+        //         },
+        //     },
+        // },
         resolve: {
             extensions: ['.tsx', '.ts', '.js'],
         },
