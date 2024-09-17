@@ -4,8 +4,8 @@ import * as ort from 'onnxruntime-web';
 export class ImageDataLoader {
   // Define static properties
   static readonly BATCH_SIZE = 64;
-  static readonly IMAGE_SIZE = 224; // Adjust as needed
-  static readonly CHANNELS = 3; // For RGB images
+  static readonly IMAGE_SIZE = 224; // Adjust based on your model's expected input size
+  static readonly CHANNELS = 3; // Set to 3 for RGB images
 
   // Class name to integer label mapping
   private classNameToLabel: { [key: string]: number } = {
@@ -16,7 +16,7 @@ export class ImageDataLoader {
 
   constructor(public batchSize = ImageDataLoader.BATCH_SIZE) {
     if (batchSize <= 0) {
-      throw new Error('Batch size must be greater than 0');
+      throw new Error("Batch size must be greater than 0");
     }
   }
 
@@ -35,11 +35,11 @@ export class ImageDataLoader {
         return files;
       } else {
         const text = await response.text();
-        console.error('Response was not JSON:', text);
-        throw new Error('Invalid response format: Expected JSON but received HTML or another format.');
+        console.error("Response was not JSON:", text);
+        throw new Error("Invalid response format: Expected JSON but received HTML or another format.");
       }
     } catch (error) {
-      console.error('Error fetching image files:', error);
+      console.error("Error fetching image files:", error);
       return [];
     }
   }
@@ -78,7 +78,7 @@ export class ImageDataLoader {
         let idx = 0;
         for (let i = 0; i < data.length; i += 4) {
           // Normalize RGB values to [0, 1]
-          floatData[idx++] = data[i] / 255; // R
+          floatData[idx++] = data[i] / 255;     // R
           floatData[idx++] = data[i + 1] / 255; // G
           floatData[idx++] = data[i + 2] / 255; // B
           // Ignore the Alpha channel (data[i + 3])
@@ -134,23 +134,14 @@ export class ImageDataLoader {
     const trainFiles = await this.fetchImageFiles();
     const { images: trainImages, labels: trainLabels } = await this.loadImagesAndLabels(trainFiles);
 
-    if (trainImages.length === 0 || trainLabels.length === 0) {
-      console.error('No training data available.');
-      return;
-    }
-
     yield* this.batches(trainImages, trainLabels);
   }
 
   // Generate testing batches
   public async *testBatches() {
+    // Modify this method if you have a separate testing dataset
     const testFiles = await this.fetchImageFiles();
     const { images: testImages, labels: testLabels } = await this.loadImagesAndLabels(testFiles);
-
-    if (testImages.length === 0 || testLabels.length === 0) {
-      console.error('No testing data available.');
-      return;
-    }
 
     yield* this.batches(testImages, testLabels);
   }
@@ -158,20 +149,11 @@ export class ImageDataLoader {
   // Helper function to yield batches
   private *batches(data: ort.Tensor[], labels: ort.Tensor[]) {
     const totalSamples = data.length;
-    if (totalSamples === 0) {
-      console.error('No data available to create batches.');
-      return;
-    }
-
     for (let i = 0; i < totalSamples; i += this.batchSize) {
       const batchData = data.slice(i, i + this.batchSize);
       const batchLabels = labels.slice(i, i + this.batchSize);
 
       // Stack tensors in the batch
-      if (batchData.length === 0 || batchLabels.length === 0) {
-        continue; // Skip empty batches
-      }
-
       const batchDataTensor = this.stackTensors(batchData, 'float32');
       const batchLabelsTensor = this.stackTensors(batchLabels, 'int64');
 
@@ -180,33 +162,26 @@ export class ImageDataLoader {
   }
 
   // Helper function to stack tensors
-  private stackTensors(tensors: ort.Tensor[], dtype: ort.Tensor.DataType): ort.Tensor {
-    if (tensors.length === 0) {
-      throw new Error('Cannot stack an empty array of tensors.');
-    }
-
+  private stackTensors(tensors: ort.Tensor[], dtype: 'float32' | 'int64'): ort.Tensor {
     const dims = tensors[0].dims;
     const batchDims = [tensors.length, ...dims.slice(1)];
+    const totalSize = tensors.reduce((sum, t) => sum + t.data.length, 0);
 
-    let stackedData: Float32Array | BigInt[];
+    let stackedData: Float32Array | BigInt64Array;
     if (dtype === 'float32') {
-      const totalSize = tensors.reduce((sum, t) => sum + t.data.length, 0);
       stackedData = new Float32Array(totalSize);
-      let offset = 0;
-      for (const tensor of tensors) {
-        stackedData.set(tensor.data as Float32Array, offset);
-        offset += tensor.data.length;
-      }
     } else if (dtype === 'int64') {
-      stackedData = [];
-      for (const tensor of tensors) {
-        const data = tensor.data as BigInt[];
-        stackedData.push(...data);
-      }
+      stackedData = new BigInt64Array(totalSize);
     } else {
       throw new Error(`Unsupported data type: ${dtype}`);
     }
 
-    return new ort.Tensor(dtype, stackedData as any, batchDims);
+    let offset = 0;
+    for (const tensor of tensors) {
+      stackedData.set(tensor.data as any, offset);
+      offset += tensor.data.length;
+    }
+
+    return new ort.Tensor(dtype, stackedData, batchDims);
   }
 }
