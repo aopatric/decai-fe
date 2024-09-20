@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import Plot from 'react-plotly.js';
 import * as ort from 'onnxruntime-web';
+import * as ortTraining from 'onnxruntime-web/training';
 import { ImageDataLoader } from './minst'; // Use ImageDataLoader for image classification
 import { Digit } from './Digit'; // Component to display images
 
@@ -35,6 +36,20 @@ function App() {
   const [errorMessage, setErrorMessage] = React.useState("");
   const [messages, setMessages] = React.useState<string[]>([]);
 
+ 
+
+// Extend the SessionOptions interface
+interface ExtendedSessionOptions extends ort.InferenceSession.SessionOptions {
+  wasm?: {
+    wasmPaths?: Record<string, string>;
+    numThreads?: number;
+    proxy?: boolean;
+    worker?: string | URL;
+    initTimeout?: number;
+  };
+}
+
+
   React.useEffect(() => {
     checkBrowserCompatibility();
   }, []);
@@ -42,7 +57,7 @@ function App() {
   function checkBrowserCompatibility() {
     const userAgent = navigator.userAgent.toLowerCase();
     if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
-      showErrorMessage('This application may not work correctly on Safari. Please use Chrome or Edge.');
+     showErrorMessage('This application may not work correctly on Safari. Please use Chrome or Edge.');
     }
   }
 
@@ -125,27 +140,192 @@ function App() {
     return result;
   }
 
-  async function runTrainingEpoch(
-    session: ort.TrainingSession,
-    dataSet: ImageDataLoader,
-    epoch: number
-  ) {
-    let batchNum = 0;
-    const epochStartTime = Date.now();
-    let iterationsPerSecond = 0;
-    await logMessage(
-      `TRAINING | Epoch: ${String(epoch + 1).padStart(2)} / ${numEpochs} | Starting training...`
+//   async function runTrainingEpoch(
+//     session: ort.TrainingSession,
+//     dataSet: ImageDataLoader,
+//     epoch: number
+//   ) {
+//     let batchNum = 0;
+//     const epochStartTime = Date.now();
+//     let iterationsPerSecond = 0;
+//     await logMessage(
+//       `TRAINING | Epoch: ${String(epoch + 1).padStart(2)} / ${numEpochs} | Starting training...`
+//     );
+  
+//     for await (const batch of dataSet.trainingBatches()) {
+//       ++batchNum;
+  
+//       // Log the shapes of the data and labels before feeding them to the model
+//       console.log(`Training Batch ${batchNum} data shape:`, batch.data.dims);
+//       console.log(`Training Batch ${batchNum} label shape:`, batch.labels.dims);
+  
+//       const feeds = {
+//         input: batch.data,
+//         labels: batch.labels,
+//       };
+  
+//       try {
+//         // Run training step
+//         const results = await session.runTrainStep(feeds);
+  
+//         // Log the shape and type of the output tensor
+//         console.log(`Training result output shape:`, results[lossNodeName].dims);
+//         console.log(`Training result output type:`, typeof results[lossNodeName].data);
+  
+//         const lossArray = results[lossNodeName].data as Float32Array;
+//         const loss = Number(lossArray[0]);
+//         iterationsPerSecond = batchNum / ((Date.now() - epochStartTime) / 1000);
+  
+//         const message = `TRAINING | Epoch: ${String(epoch + 1).padStart(2)} | Batch ${String(
+//           batchNum
+//         ).padStart(3)} | Loss: ${loss.toFixed(4)} | ${iterationsPerSecond.toFixed(2)} it/s`;
+//         await logMessage(message);
+  
+//         await session.runOptimizerStep();
+//         await session.lazyResetGrad();
+  
+//         // Update training losses for plotting
+//         setTrainingLosses((losses) => [...losses, loss]);
+  
+//         // Update image predictions
+//         await updateImagePredictions(session);
+//       } catch (error) {
+//         console.error(`Error during training batch ${batchNum} in epoch ${epoch}:`, error);
+//         showErrorMessage(`Error during training batch ${batchNum} in epoch ${epoch}: ${error}`);
+//         break;
+//       }
+//     }
+  
+//     return iterationsPerSecond;
+//   }
+  
+
+ async function runTestingEpoch(
+  session: ort.TrainingSession,
+  dataSet: ImageDataLoader,
+  epoch: number
+): Promise<number> {
+  let batchNum = 0;
+  let numCorrect = 0;
+  let testPicsSoFar = 0;
+  let accumulatedLoss = 0;
+  const epochStartTime = Date.now();
+  await logMessage(
+    `TESTING | Epoch: ${String(epoch + 1).padStart(2)} / ${numEpochs} | Starting testing...`
+  );
+
+  for await (const batch of dataSet.testBatches()) {
+    ++batchNum;
+
+    // Log the shapes of the data and labels before feeding them to the model
+    console.log(`Testing Batch ${batchNum} data shape:`, batch.data.dims);
+    console.log(`Testing Batch ${batchNum} label shape:`, batch.labels.dims);
+
+    const feeds = {
+      input: batch.data,
+      labels: batch.labels,
+    };
+
+    try {
+      // Run evaluation step
+      const results = await session.runEvalStep(feeds);
+
+      // Log the shape and type of the output tensor
+      console.log(`Testing result output shape:`, results[lossNodeName].dims);
+      console.log(`Testing result output type:`, typeof results[lossNodeName].data);
+
+      const lossArray = results[lossNodeName].data as Float32Array;
+      const loss = Number(lossArray[0]);
+
+      accumulatedLoss += loss;
+      testPicsSoFar += batch.data.dims[0];
+      numCorrect += countCorrectPredictions(results['output'], batch.labels);
+
+      const iterationsPerSecond = batchNum / ((Date.now() - epochStartTime) / 1000);
+      const message = `TESTING | Epoch: ${String(epoch + 1).padStart(2)} | Batch ${String(
+        batchNum
+      ).padStart(3)} | Average test loss: ${(accumulatedLoss / batchNum).toFixed(2)} | Accuracy: ${
+        numCorrect
+      }/${testPicsSoFar} (${((100 * numCorrect) / testPicsSoFar).toFixed(2)}%) | ${iterationsPerSecond.toFixed(2)} it/s`;
+      await logMessage(message);
+    } catch (error) {
+      console.error(`Error during testing batch ${batchNum} in epoch ${epoch}:`, error);
+      showErrorMessage(`Error during testing batch ${batchNum} in epoch ${epoch}: ${error}`);
+      break;
+    }
+  }
+
+  const avgAcc = numCorrect / testPicsSoFar;
+  setTestAccuracies((accs) => accs.concat(avgAcc));
+  return avgAcc;
+}
+
+
+  
+    
+    
+    
+async function train() {
+  clearOutputs();
+  setIsTraining(true);
+  try {
+    console.log("Starting training process..."); // Ensure this runs
+    const trainingSession = await loadTrainingSession();
+    console.log("Training session successfully loaded."); // Log session load confirmation
+    const dataSet = new ImageDataLoader(batchSize);
+    lastLogTime = Date.now();
+    await updateImagePredictions(trainingSession);
+    const startTrainingTime = Date.now();
+    showStatusMessage('Training started');
+    let itersPerSecCumulative = 0;
+    let testAcc = 0;
+    for (let epoch = 0; epoch < numEpochs; epoch++) {
+      console.log(`Starting Epoch ${epoch + 1}`); // Log epoch number
+      itersPerSecCumulative += await runTrainingEpoch(trainingSession, dataSet, epoch);
+      testAcc = await runTestingEpoch(trainingSession, dataSet, epoch);
+    }
+    const trainingTimeMs = Date.now() - startTrainingTime;
+    showStatusMessage(
+      `Training completed. Final test set accuracy: ${(100 * testAcc).toFixed(
+        2
+      )}% | Total training time: ${trainingTimeMs / 1000} seconds | Average iterations / second: ${(
+        itersPerSecCumulative / numEpochs
+      ).toFixed(2)}`
     );
+  } catch (error) {
+    console.error("Primitive error during training:", error); // Explicit logging of error object
+    showErrorMessage(`Error during training: ${error}`);
+  }
+  setIsTraining(false);
+}
 
-    for await (const batch of dataSet.trainingBatches()) {
-      ++batchNum;
+async function runTrainingEpoch(
+  session: ort.TrainingSession,
+  dataSet: ImageDataLoader,
+  epoch: number
+) {
+  let batchNum = 0;
+  const epochStartTime = Date.now();
+  let iterationsPerSecond = 0;
+  await logMessage(
+    `TRAINING | Epoch: ${String(epoch + 1).padStart(2)} / ${numEpochs} | Starting training...`
+  );
+  
+  console.log("Training epoch started"); // Log to check if training epoch starts
+  
+  for await (const batch of dataSet.trainingBatches()) {
+    ++batchNum;
+    
+    console.log(`Training Batch ${batchNum} data shape:`, batch.data.dims); // Log data dimensions
+    
+    const feeds = {
+      input: batch.data,
+      labels: batch.labels,
+    };
 
-      const feeds = {
-        input: batch.data,
-        labels: batch.labels,
-      };
-
+    try {
       const results = await session.runTrainStep(feeds);
+      console.log("Training step completed for batch:", batchNum); // Log when training step completes
       const lossArray = results[lossNodeName].data as Float32Array;
       const loss = Number(lossArray[0]);
       iterationsPerSecond = batchNum / ((Date.now() - epochStartTime) / 1000);
@@ -162,109 +342,48 @@ function App() {
 
       // Update image predictions
       await updateImagePredictions(session);
-    }
-    return iterationsPerSecond;
-  }
-
-  async function runTestingEpoch(
-    session: ort.TrainingSession,
-    dataSet: ImageDataLoader,
-    epoch: number
-  ): Promise<number> {
-    let batchNum = 0;
-    let numCorrect = 0;
-    let testPicsSoFar = 0;
-    let accumulatedLoss = 0;
-    const epochStartTime = Date.now();
-    await logMessage(
-      `TESTING | Epoch: ${String(epoch + 1).padStart(2)} / ${numEpochs} | Starting testing...`
-    );
-
-    for await (const batch of dataSet.testBatches()) {
-      ++batchNum;
-
-      const feeds = {
-        input: batch.data,
-        labels: batch.labels,
-      };
-
-      const results = await session.runEvalStep(feeds);
-      const lossArray = results[lossNodeName].data as Float32Array;
-      const loss = Number(lossArray[0]);
-
-      accumulatedLoss += loss;
-      testPicsSoFar += batch.data.dims[0];
-      numCorrect += countCorrectPredictions(results['output'], batch.labels);
-      const iterationsPerSecond = batchNum / ((Date.now() - epochStartTime) / 1000);
-      const message = `TESTING | Epoch: ${String(epoch + 1).padStart(2)} | Batch ${String(
-        batchNum
-      ).padStart(3)} | Average test loss: ${(
-        accumulatedLoss / batchNum
-      ).toFixed(2)} | Accuracy: ${numCorrect}/${testPicsSoFar} (${(
-        (100 * numCorrect) /
-        testPicsSoFar
-      ).toFixed(2)}%) | ${iterationsPerSecond.toFixed(2)} it/s`;
-      await logMessage(message);
-    }
-    const avgAcc = numCorrect / testPicsSoFar;
-    setTestAccuracies((accs) => accs.concat(avgAcc));
-    return avgAcc;
-  }
-
-  async function train() {
-    clearOutputs();
-    setIsTraining(true);
-    try {
-      const trainingSession = await loadTrainingSession();
-      const dataSet = new ImageDataLoader(batchSize);
-      lastLogTime = Date.now();
-      await updateImagePredictions(trainingSession);
-      const startTrainingTime = Date.now();
-      showStatusMessage('Training started');
-      let itersPerSecCumulative = 0;
-      let testAcc = 0;
-      for (let epoch = 0; epoch < numEpochs; epoch++) {
-        itersPerSecCumulative += await runTrainingEpoch(trainingSession, dataSet, epoch);
-        testAcc = await runTestingEpoch(trainingSession, dataSet, epoch);
-      }
-      const trainingTimeMs = Date.now() - startTrainingTime;
-      showStatusMessage(
-        `Training completed. Final test set accuracy: ${(100 * testAcc).toFixed(
-          2
-        )}% | Total training time: ${trainingTimeMs / 1000} seconds | Average iterations / second: ${(
-          itersPerSecCumulative / numEpochs
-        ).toFixed(2)}`
-      );
     } catch (error) {
-      showErrorMessage(`Error during training: ${error}`);
+      console.error(`Error during training batch ${batchNum} in epoch ${epoch}:`, error);
+      showErrorMessage(`Error during training batch ${batchNum} in epoch ${epoch}: ${error}`);
+      break;
     }
-    setIsTraining(false);
   }
 
-  async function loadTrainingSession(): Promise<ort.TrainingSession> {
+  return iterationsPerSecond;
+}
+
+
+
+ 
+  
+  async function loadTrainingSession(): Promise<ortTraining.TrainingSession> {
     console.log('Attempting to load training session...');
   
+    const chkptPath = 'checkpoint';
+    const trainingPath = 'training_model.onnx';
+    const optimizerPath = 'optimizer_model.onnx';
+    const evalPath = 'eval_model.onnx';
+  
+    const createOptions: ortTraining.TrainingSessionCreateOptions = {
+      checkpointState: chkptPath,
+      trainModel: trainingPath,
+      evalModel: evalPath,
+      optimizerModel: optimizerPath,
+    };
+  
+    // Access SessionOptions via InferenceSession
+    const sessionOptions: ExtendedSessionOptions = {
+      executionProviders: ['wasm'],
+      wasm: {
+        wasmPaths: {
+          'ort-training.wasm': '/ort-training-wasm-simd.wasm',
+        },
+        numThreads: 1, // Disable multithreading
+      },
+    };    
+  
     try {
-      const [
-        trainModelArrayBuffer,
-        evalModelArrayBuffer,
-        optimizerModelArrayBuffer,
-        checkpointStateArrayBuffer,
-      ] = await Promise.all([
-        fetch('training_model.onnx').then((res) => res.arrayBuffer()),
-        fetch('eval_model.onnx').then((res) => res.arrayBuffer()),
-        fetch('optimizer_model.onnx').then((res) => res.arrayBuffer()),
-        fetch('checkpoint').then((res) => res.arrayBuffer()),
-      ]);
-  
-      const createOptions: ort.TrainingSessionCreateOptions = {
-        trainModel: new Uint8Array(trainModelArrayBuffer),
-        evalModel: new Uint8Array(evalModelArrayBuffer),
-        optimizerModel: new Uint8Array(optimizerModelArrayBuffer),
-        checkpointState: new Uint8Array(checkpointStateArrayBuffer),
-      };
-  
-      const session = await ort.TrainingSession.create(createOptions);
+      const session = await ortTraining.TrainingSession.create(createOptions, sessionOptions);
       console.log('Training session loaded');
       return session;
     } catch (err) {
@@ -272,6 +391,8 @@ function App() {
       throw err;
     }
   }
+  
+  
   
 
   async function updateImagePredictions(session: ort.TrainingSession) {
