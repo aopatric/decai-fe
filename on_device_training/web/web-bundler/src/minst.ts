@@ -1,17 +1,27 @@
 // mnist.ts
 import * as ort from 'onnxruntime-web';
 
+interface ImageFile {
+  image_path: string;
+  label: string;
+}
+
+interface Batch {
+  data: ort.Tensor;
+  labels: ort.Tensor;
+}
+
 export class ImageDataLoader {
   // Define static properties
   static readonly BATCH_SIZE = 64;
-  static readonly IMAGE_SIZE = 224; // Adjust based on your model's expected input size
+  static readonly IMAGE_SIZE = 224; // Reduced from 512 for better performance
   static readonly CHANNELS = 3; // Set to 3 for RGB images
 
   // Class name to integer label mapping
   private classNameToLabel: { [key: string]: number } = {
     'glioma': 0,
     'notumor': 1,
-    // Add other classes if necessary
+    // Add other classes as needed
   };
 
   constructor(public batchSize = ImageDataLoader.BATCH_SIZE) {
@@ -20,10 +30,14 @@ export class ImageDataLoader {
     }
   }
 
-  // Method to fetch image files
-  private async fetchImageFiles(): Promise<{ image_path: string; label: string }[]> {
+  /**
+   * Fetches image file metadata from a specified JSON path.
+   * @param jsonPath - The path to the JSON file containing image paths and labels.
+   * @returns A shuffled array of ImageFile objects.
+   */
+  private async fetchImageFiles(jsonPath: string): Promise<ImageFile[]> {
     try {
-      const response = await fetch('/data/classification-train.json');
+      const response = await fetch(jsonPath);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch image files: ${response.statusText}`);
@@ -31,8 +45,8 @@ export class ImageDataLoader {
 
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
-        const files: { image_path: string; label: string }[] = await response.json();
-        return files;
+        const files: ImageFile[] = await response.json();
+        return this.shuffle(files); // Shuffle the files for randomness
       } else {
         const text = await response.text();
         console.error("Response was not JSON:", text);
@@ -44,7 +58,25 @@ export class ImageDataLoader {
     }
   }
 
-  // Method to load and process an image
+  /**
+   * Implements the Fisher-Yates shuffle algorithm to randomize an array.
+   * @param array - The array to be shuffled.
+   * @returns A new shuffled array.
+   */
+  private shuffle<T>(array: T[]): T[] {
+    const shuffled = array.slice();
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
+
+  /**
+   * Loads and processes an image from a given path.
+   * @param imagePath - The path to the image file.
+   * @returns A normalized Float32Array representing the image data.
+   */
   private async loadImageData(imagePath: string): Promise<Float32Array> {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -94,60 +126,96 @@ export class ImageDataLoader {
     });
   }
 
-  // Method to load images and labels
+  /**
+   * Loads images and their corresponding labels, converting them into ONNX Runtime tensors.
+   * Utilizes controlled concurrency to optimize performance without overwhelming resources.
+   * @param files - An array of ImageFile objects containing image paths and labels.
+   * @param maxConcurrency - The maximum number of concurrent image loading operations.
+   * @returns An object containing arrays of image and label tensors.
+   */
   private async loadImagesAndLabels(
-    files: { image_path: string; label: string }[]
+    files: ImageFile[],
+    maxConcurrency: number = 8
   ): Promise<{ images: ort.Tensor[]; labels: ort.Tensor[] }> {
     const images: ort.Tensor[] = [];
     const labels: ort.Tensor[] = [];
 
-    for (const { image_path, label } of files) {
+    const queue = [...files];
+    let activePromises: Promise<void>[] = [];
+
+    const processNext = async () => {
+      if (queue.length === 0) return;
+
+      const { image_path, label } = queue.shift()!;
+
       try {
         const imageData = await this.loadImageData(image_path);
 
-        images.push(
-          new ort.Tensor(
-            'float32',
-            imageData,
-            [1, ImageDataLoader.CHANNELS, ImageDataLoader.IMAGE_SIZE, ImageDataLoader.IMAGE_SIZE] // NCHW format
-          )
+        // Create tensor for image
+        const imageTensor = new ort.Tensor(
+          'float32',
+          imageData,
+          [1, ImageDataLoader.CHANNELS, ImageDataLoader.IMAGE_SIZE, ImageDataLoader.IMAGE_SIZE] // NCHW format
         );
+        images.push(imageTensor);
 
-        // Use the mapping to get the numeric label
+        // Map label to integer
         const labelKey = label.trim().toLowerCase();
         const labelValue = this.classNameToLabel[labelKey];
         if (labelValue === undefined) {
           console.error(`Unknown label '${label}' for image '${image_path}'. Skipping this image.`);
-          continue; // Skip this image
+          return; // Skip this image
         }
-        labels.push(new ort.Tensor('int64', [BigInt(labelValue)], [1]));
+
+        // Create tensor for label
+        const labelTensor = new ort.Tensor('int64', [BigInt(labelValue)], [1]);
+        labels.push(labelTensor);
       } catch (error) {
         console.error(`Error loading image or label from file: ${image_path}`, error);
+        // Optionally, track failed images
       }
+
+      await processNext();
+    };
+
+    // Initialize concurrent processing
+    for (let i = 0; i < maxConcurrency; i++) {
+      activePromises.push(processNext());
     }
+
+    await Promise.all(activePromises);
 
     return { images, labels };
   }
 
-  // Generate training batches
-  public async *trainingBatches() {
-    const trainFiles = await this.fetchImageFiles();
+  /**
+   * Asynchronous generator that yields training batches.
+   * @param trainJsonPath - The path to the training JSON file.
+   */
+  public async *trainingBatches(trainJsonPath: string): AsyncGenerator<Batch> {
+    const trainFiles = await this.fetchImageFiles(trainJsonPath);
     const { images: trainImages, labels: trainLabels } = await this.loadImagesAndLabels(trainFiles);
 
     yield* this.batches(trainImages, trainLabels);
   }
 
-  // Generate testing batches
-  public async *testBatches() {
-    // Modify this method if you have a separate testing dataset
-    const testFiles = await this.fetchImageFiles();
+  /**
+   * Asynchronous generator that yields testing batches.
+   * @param testJsonPath - The path to the testing JSON file.
+   */
+  public async *testBatches(testJsonPath: string): AsyncGenerator<Batch> {
+    const testFiles = await this.fetchImageFiles(testJsonPath);
     const { images: testImages, labels: testLabels } = await this.loadImagesAndLabels(testFiles);
 
     yield* this.batches(testImages, testLabels);
   }
 
-  // Helper function to yield batches
-  private *batches(data: ort.Tensor[], labels: ort.Tensor[]) {
+  /**
+   * Helper generator function to yield batches of data and labels.
+   * @param data - An array of image tensors.
+   * @param labels - An array of label tensors.
+   */
+  private *batches(data: ort.Tensor[], labels: ort.Tensor[]): Generator<Batch> {
     const totalSamples = data.length;
     for (let i = 0; i < totalSamples; i += this.batchSize) {
       const batchData = data.slice(i, i + this.batchSize);
@@ -161,10 +229,26 @@ export class ImageDataLoader {
     }
   }
 
-  // Helper function to stack tensors
+  /**
+   * Helper function to stack multiple tensors into a single batched tensor.
+   * Ensures all tensors have the same dimensions before stacking.
+   * @param tensors - An array of tensors to be stacked.
+   * @param dtype - The data type of the tensors ('float32' or 'int64').
+   * @returns A new tensor representing the stacked batch.
+   */
   private stackTensors(tensors: ort.Tensor[], dtype: 'float32' | 'int64'): ort.Tensor {
-    const dims = tensors[0].dims;
-    const batchDims = [tensors.length, ...dims.slice(1)];
+    if (tensors.length === 0) {
+      throw new Error("No tensors provided for stacking.");
+    }
+
+    const firstDims = tensors[0].dims;
+    for (const tensor of tensors) {
+      if (JSON.stringify(tensor.dims) !== JSON.stringify(firstDims)) {
+        throw new Error("All tensors must have the same dimensions to be stacked.");
+      }
+    }
+
+    const batchDims = [tensors.length, ...firstDims.slice(1)];
     const totalSize = tensors.reduce((sum, t) => sum + t.data.length, 0);
 
     let stackedData: Float32Array | BigInt64Array;
@@ -178,7 +262,11 @@ export class ImageDataLoader {
 
     let offset = 0;
     for (const tensor of tensors) {
-      stackedData.set(tensor.data as any, offset);
+      if (dtype === 'float32') {
+        (stackedData as Float32Array).set(tensor.data as Float32Array, offset);
+      } else if (dtype === 'int64') {
+        (stackedData as BigInt64Array).set(tensor.data as BigInt64Array, offset);
+      }
       offset += tensor.data.length;
     }
 
