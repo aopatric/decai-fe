@@ -1,0 +1,2 @@
+on_device_training/web/web-bundler/public/data/mnist_handwritten_train.json filter=lfs diff=lfs merge=lfs -text
+on_device_training/web/web-bundler/public/data/mnist_handwritten_test.json filter=lfs diff=lfs merge=lfs -text
