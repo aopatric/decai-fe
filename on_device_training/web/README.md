@@ -11,24 +11,37 @@ scikit-learn
 Setup Instructions
 1. Clone the Repository and Navigate to the Project Directory
 cd onnxruntime-training-examples/on_device_training/web/web-bundler
+
 2. Install Node.js Dependencies
 npm install
+
 3. Install Python Dependencies
 pip install numpy pandas scikit-learn
-4. Start the Development Server
+
+4. Download and Prepare the MNIST Dataset
+Download the Dataset
+Use the following commands to download the MNIST dataset in JSON format:
+curl -LO https://github.com/lorenmh/mnist_handwritten_json/raw/master/mnist_handwritten_train.json.gz
+curl -LO https://github.com/lorenmh/mnist_handwritten_json/raw/master/mnist_handwritten_test.json.gz
+Decompress the Files
+Unzip the downloaded files:
+gunzip *.gz
+Place the Files in the Project Directory
+Create the public/data directory if it doesn't exist, and move the JSON files there:
+mkdir -p public/data
+mv mnist_handwritten_train.json public/data/
+mv mnist_handwritten_test.json public/data/
+
+5. Start the Development Server
 npm start
+
 6. Open the Browser
 Navigate to http://localhost:8080 to access the training interface.
 
 Notes
 Image Size: The MNIST images are 28x28 pixels in grayscale.
-Data Preparation: No additional data preparation is required since the MNIST dataset is already formatted for use.
+Data Preparation: The MNIST dataset is now ready for use after downloading and unzipping.
 Troubleshooting: Check the console for any error messages during training or evaluation.
 Short Summary
 This project demonstrates on-device training using ONNX Runtime Web with the MNIST dataset, allowing you to train a neural network model directly in your browser. It requires Node.js, npm, and Python with a few packages, and can be set up quickly by cloning the repository, installing dependencies, and starting the development server. The application provides a user interface to monitor training progress and visualize results in real-time.
-
-
-
-
-
 
