@@ -18,12 +18,10 @@ import { Digit } from "./Digit"; // Ensure this path is correct
 
 function App() {
   // Configuration Constants
-  const lossNodeName = "onnx::loss::14"; // As per model properties
-  const outputNodeName = "output";        // As per model properties
+  const lossNodeName = "onnx::loss::14"; 
+  const outputNodeName = "output";
 
   // State Variables
-  const [maxNumTrainSamples, setMaxNumTrainSamples] = React.useState<number>(6400);
-  const [maxNumTestSamples, setMaxNumTestSamples] = React.useState<number>(1280);
   const [batchSize, setBatchSize] = React.useState<number>(ImageDataLoader.BATCH_SIZE);
   const [numEpochs, setNumEpochs] = React.useState<number>(5);
   const [trainingLosses, setTrainingLosses] = React.useState<number[]>([]);
@@ -45,7 +43,7 @@ function App() {
     loadImages();
     checkBrowserCompatibility();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [batchSize, maxNumTrainSamples, maxNumTestSamples]);
+  }, [batchSize]);
 
   /**
    * Checks browser compatibility for ONNX Runtime Web.
@@ -78,14 +76,6 @@ function App() {
   }
 
   /**
-   * Adds multiple messages to the UI log.
-   * @param messagesToAdd - An array of messages to add.
-   */
-  function addMessages(messagesToAdd: string[]) {
-    setMessages((prevMessages) => [...prevMessages, ...messagesToAdd]);
-  }
-
-  /**
    * Clears all output logs, messages, and status indicators.
    */
   function clearOutputs() {
@@ -108,7 +98,7 @@ function App() {
 
     try {
       // Fetch test batches
-      const testBatches = dataSet.testBatches("/data/classification-test.json");
+      const testBatches = dataSet.testBatches();
       for await (const batch of testBatches) {
         const { data, labels } = batch;
         const currentBatchSize = labels.dims[0];
@@ -142,7 +132,6 @@ function App() {
   async function loadTrainingSession(): Promise<ortTraining.TrainingSession> {
     console.log("Attempting to load training session...");
 
-    // Corrected paths (removed '/public')
     const chkptPath = "/checkpoint"; // Ensure this path is correct and accessible
     const trainingPath = "/training_model.onnx";
     const optimizerPath = "/optimizer_model.onnx";
@@ -279,7 +268,7 @@ function App() {
       `TRAINING | Epoch: ${String(epoch + 1).padStart(2)} / ${numEpochs} | Starting training...`
     );
 
-    for await (const batch of dataSet.trainingBatches("/data/classification-train.json")) {
+    for await (const batch of dataSet.trainingBatches()) {
       batchNum++;
 
       const { data, labels } = batch;
@@ -329,14 +318,14 @@ function App() {
   ): Promise<number> {
     let batchNum = 0;
     let numCorrect = 0;
-    let testPicsSoFar = 0;
+    let testSamplesSoFar = 0;
     let accumulatedLoss = 0;
     const epochStartTime = Date.now();
     await logMessage(
       `TESTING | Epoch: ${String(epoch + 1).padStart(2)} / ${numEpochs} | Starting testing...`
     );
 
-    for await (const batch of dataSet.testBatches("/data/classification-test.json")) {
+    for await (const batch of dataSet.testBatches()) {
       batchNum++;
       const { data, labels } = batch;
 
@@ -347,15 +336,16 @@ function App() {
         const loss = Number(lossArray[0]);
 
         accumulatedLoss += loss;
-        testPicsSoFar += labels.dims[0];
+        testSamplesSoFar += labels.dims[0];
         numCorrect += countCorrectPredictions(results[outputNodeName], labels);
 
         const iterationsPerSecond = batchNum / ((Date.now() - epochStartTime) / 1000);
+        const accuracy = (100 * numCorrect) / testSamplesSoFar;
         const message = `TESTING | Epoch: ${String(epoch + 1).padStart(2)} | Batch ${String(
           batchNum
         ).padStart(3)} | Avg Loss: ${(accumulatedLoss / batchNum).toFixed(2)} | Accuracy: ${
           numCorrect
-        }/${testPicsSoFar} (${((100 * numCorrect) / testPicsSoFar).toFixed(2)}%) | ${iterationsPerSecond.toFixed(
+        }/${testSamplesSoFar} (${accuracy.toFixed(2)}%) | ${iterationsPerSecond.toFixed(
           2
         )} it/s`;
         await logMessage(message);
@@ -368,7 +358,7 @@ function App() {
       }
     }
 
-    const avgAcc = numCorrect / testPicsSoFar;
+    const avgAcc = numCorrect / testSamplesSoFar;
     setTestAccuracies((prevAccs) => [...prevAccs, avgAcc]);
     return avgAcc;
   }
@@ -458,8 +448,8 @@ function App() {
                 margin,
                 width: 500,
                 height: 300,
-                title: "Training Loss per Epoch",
-                xaxis: { title: "Epoch" },
+                title: "Training Loss per Batch",
+                xaxis: { title: "Batch Number" },
                 yaxis: { title: "Loss" },
               }}
             />
@@ -525,7 +515,7 @@ function App() {
         <Link href="https://onnxruntime.ai/docs/" target="_blank" rel="noopener">
           ONNX Runtime Web
         </Link>{" "}
-        for a simple image classification model.
+        for a simple image classification model on the MNIST dataset.
       </Typography>
 
       {/* Training Configuration */}
@@ -557,28 +547,6 @@ function App() {
             />
           </Grid>
           <Grid item xs={12} sm={4}>
-            <TextField
-              label="Max Training Samples"
-              type="number"
-              fullWidth
-              value={maxNumTrainSamples}
-              onChange={(e) => setMaxNumTrainSamples(Number(e.target.value))}
-              disabled={isTraining}
-              inputProps={{ min: 1 }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              label="Max Testing Samples"
-              type="number"
-              fullWidth
-              value={maxNumTestSamples}
-              onChange={(e) => setMaxNumTestSamples(Number(e.target.value))}
-              disabled={isTraining}
-              inputProps={{ min: 1 }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={8}>
             <FormControlLabel
               control={
                 <Switch
