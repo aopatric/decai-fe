@@ -42,6 +42,8 @@ Notes
 Image Size: The MNIST images are 28x28 pixels in grayscale.
 Data Preparation: The MNIST dataset is now ready for use after downloading and unzipping.
 Troubleshooting: Check the console for any error messages during training or evaluation.
-Short Summary
-This project demonstrates on-device training using ONNX Runtime Web with the MNIST dataset, allowing you to train a neural network model directly in your browser. It requires Node.js, npm, and Python with a few packages, and can be set up quickly by cloning the repository, installing dependencies, and starting the development server. The application provides a user interface to monitor training progress and visualize results in real-time.
+
+Credits:
+Microsoft / onnxruntime-training-examples  -- for creating the on-device-training-web
+lorenmh minst_handwritten_json -- for the dataset to train the on-device-training-web
 
