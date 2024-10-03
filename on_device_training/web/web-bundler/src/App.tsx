@@ -1,4 +1,3 @@
-// src/App.tsx
 import React from "react";
 import {
   Button,
@@ -18,11 +17,11 @@ import { Digit } from "./Digit"; // Ensure this path is correct
 
 function App() {
   // Configuration Constants
-  const lossNodeName = "onnx::loss::14"; 
+  const lossNodeName = "onnx::loss::14";
   const outputNodeName = "output";
 
   // State Variables
-  const [batchSize, setBatchSize] = React.useState<number>(ImageDataLoader.BATCH_SIZE);
+  const [batchSize, setBatchSize] = React.useState<number>(64); // Default value can be set here
   const [numEpochs, setNumEpochs] = React.useState<number>(5);
   const [trainingLosses, setTrainingLosses] = React.useState<number[]>([]);
   const [testAccuracies, setTestAccuracies] = React.useState<number[]>([]);
@@ -142,7 +141,6 @@ function App() {
       trainModel: trainingPath,
       evalModel: evalPath,
       optimizerModel: optimizerPath,
-      // You can specify additional options here if needed
     };
 
     try {
