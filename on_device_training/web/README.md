@@ -1,36 +1,28 @@
 ONNX Runtime Web On-Device Training Demo
-This project demonstrates on-device training using ONNX Runtime Web for a simple image classification model on the MNIST dataset. The application trains a model directly in the browser using WebAssembly and displays training progress and results in real-time. It requires minimal dependencies and can be set up and run with a few simple steps.
+This project demonstrates on-device training using ONNX Runtime Web for a simple image classification model using the BloodMNIST dataset. The application trains a model directly in the browser using WebAssembly and displays training progress and results in real-time.
 
 Prerequisites
 Node.js (v14 or higher)
 npm (Node Package Manager)
 Python 3.11 with the following packages:
+medmnist
 numpy
 pandas
-scikit-learn
+tqdm
 Setup Instructions
 1. Clone the Repository and Navigate to the Project Directory
-cd onnxruntime-training-examples/on_device_training/web/web-bundler
-
+cd on-device-training-classification-model/on_device_training/web/web-bundler
 2. Install Node.js Dependencies
-npm install
 
 3. Install Python Dependencies
-pip install numpy pandas scikit-learn
 
-4. Download and Prepare the MNIST Dataset
-Download the Dataset
-Use the following commands to download the MNIST dataset in JSON format:
-curl -LO https://github.com/lorenmh/mnist_handwritten_json/raw/master/mnist_handwritten_train.json.gz
-curl -LO https://github.com/lorenmh/mnist_handwritten_json/raw/master/mnist_handwritten_test.json.gz
-Decompress the Files
-Unzip the downloaded files:
-gunzip *.gz
-Place the Files in the Project Directory
-Create the public/data directory if it doesn't exist, and move the JSON files there:
-mkdir -p public/data
-mv mnist_handwritten_train.json public/data/
-mv mnist_handwritten_test.json public/data/
+pip install medmnist numpy pandas tqdm
+4. Prepare the Dataset
+Download the BloodMNIST dataset using the following command:
+python -m medmnist download --flag=bloodmnist --size=28
+
+Convert the dataset to JSON format by running the conversion script:
+python convert_bloodmnist_to_json.py --data_flag=bloodmnist --output_dir=public/data
 
 5. Start the Development Server
 npm start
@@ -39,11 +31,12 @@ npm start
 Navigate to http://localhost:8080 to access the training interface.
 
 Notes
-Image Size: The MNIST images are 28x28 pixels in grayscale.
-Data Preparation: The MNIST dataset is now ready for use after downloading and unzipping.
+Image Size: The BloodMNIST images are 28x28 pixels in grayscale.
+Data Preparation: The BloodMNIST dataset is automatically downloaded and converted to JSON format.
 Troubleshooting: Check the console for any error messages during training or evaluation.
 
 Credits:
 Microsoft / onnxruntime-training-examples  -- for creating the on-device-training-web
-lorenmh minst_handwritten_json -- for the dataset to train the on-device-training-web
-
+Jiancheng Yang, Rui Shi, Donglai Wei, Zequan Liu, Lin Zhao, Bilian Ke, Hanspeter Pfister, Bingbing Ni. Yang, Jiancheng, et al. "MedMNIST v2-A large-scale lightweight benchmark for 2D and 3D biomedical image classification." Scientific Data, 2023.
+                            
+Jiancheng Yang, Rui Shi, Bingbing Ni. "MedMNIST Classification Decathlon: A Lightweight AutoML Benchmark for Medical Image Analysis". IEEE 18th International Symposium on Biomedical Imaging (ISBI), 2021.
