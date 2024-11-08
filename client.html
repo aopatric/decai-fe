@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WebSocket Client Node</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 50px;
+    }
+    #status, #rank, #peers {
+      margin: 10px;
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <h1>WebSocket Client Node</h1>
+  <p id="status">Connecting...</p>
+  <p id="rank">Rank: -</p>
+  <p id="peers">Peers: None</p>
+
+  <script>
+    // Connect to the signaling server
+    const socket = new WebSocket("ws://localhost:8080");
+
+    // Status of the connection
+    socket.onopen = () => {
+        document.getElementById("status").textContent = "Connected to signaling server";
+        console.log("Connected to the signaling server");
+    };
+
+    // Handle incoming messages from the server
+    socket.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+
+        // Check if we received the initial handshake with rank and peers
+        if (data.rank !== undefined) {
+            document.getElementById("rank").textContent = `Rank: ${data.rank}`;
+            console.log(`Assigned rank: ${data.rank}`);
+        }
+
+        // Update peer list when peers information is received
+        if (data.peers) {
+            const peersText = Object.entries(data.peers)
+              .map(([rank, { ip, port }]) => `Rank ${rank} - IP: ${ip}, Port: ${port}`)
+              .join(", ");
+            document.getElementById("peers").textContent = `Peers: ${peersText}`;
+            console.log("Peers list updated:", data.peers);
+        }
+    };
+
+    // Handle disconnection from the server
+    socket.onclose = () => {
+        document.getElementById("status").textContent = "Disconnected from signaling server";
+        console.log("Disconnected from the signaling server");
+    };
+
+    // Handle any errors
+    socket.onerror = (error) => {
+        console.log("WebSocket Error:", error);
+    };
+  </script>
+</body>
+</html>
