@@ -2,67 +2,126 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>WebSocket Client Node</title>
+  <title>Federated Learning Node</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> <!-- TensorFlow.js -->
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 50px;
-    }
-    #status, #rank, #peers {
-      margin: 10px;
-      font-size: 1.2em;
-    }
+    body { font-family: Arial, sans-serif; text-align: center; }
   </style>
 </head>
 <body>
-  <h1>WebSocket Client Node</h1>
+  <h1>Federated Learning Node</h1>
   <p id="status">Connecting...</p>
   <p id="rank">Rank: -</p>
   <p id="peers">Peers: None</p>
 
   <script>
-    // Connect to the signaling server
     const socket = new WebSocket("ws://localhost:8080");
+    let rank;
+    let peers = {};
 
-    // Status of the connection
+    // Initialize a simple TensorFlow.js model
+    const model = tf.sequential();
+    model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
+    model.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
+
+    // Initial handshake with the server
     socket.onopen = () => {
         document.getElementById("status").textContent = "Connected to signaling server";
         console.log("Connected to the signaling server");
     };
 
-    // Handle incoming messages from the server
     socket.onmessage = (message) => {
         const data = JSON.parse(message.data);
 
-        // Check if we received the initial handshake with rank and peers
+        // Receive rank and peer list in initial handshake
         if (data.rank !== undefined) {
-            document.getElementById("rank").textContent = `Rank: ${data.rank}`;
-            console.log(`Assigned rank: ${data.rank}`);
+            rank = data.rank;
+            document.getElementById("rank").textContent = `Rank: ${rank}`;
+            console.log(`Assigned rank: ${rank}`);
         }
 
-        // Update peer list when peers information is received
+        // Update peers list
         if (data.peers) {
-            const peersText = Object.entries(data.peers)
+            peers = data.peers;
+            const peersText = Object.entries(peers)
               .map(([rank, { ip, port }]) => `Rank ${rank} - IP: ${ip}, Port: ${port}`)
               .join(", ");
             document.getElementById("peers").textContent = `Peers: ${peersText}`;
-            console.log("Peers list updated:", data.peers);
+            console.log("Peers list updated:", peers);
         }
     };
 
-    // Handle disconnection from the server
     socket.onclose = () => {
         document.getElementById("status").textContent = "Disconnected from signaling server";
         console.log("Disconnected from the signaling server");
     };
 
-    // Handle any errors
-    socket.onerror = (error) => {
-        console.log("WebSocket Error:", error);
-    };
+    // Function to train model and return weights
+    async function trainModel() {
+        const xs = tf.tensor2d([1, 2, 3, 4], [4, 1]);
+        const ys = tf.tensor2d([1, 3, 5, 7], [4, 1]);
+        await model.fit(xs, ys, { epochs: 1 });
+        return model.getWeights();
+    }
+
+    // Function to exchange weights with a random peer
+    async function exchangeWeights() {
+        const peerKeys = Object.keys(peers).filter(p => p != rank); // Filter out self
+        if (peerKeys.length === 0) return; // No peers to communicate with
+
+        const randomPeerRank = peerKeys[Math.floor(Math.random() * peerKeys.length)];
+        const randomPeer = peers[randomPeerRank];
+
+        // Simulate receiving weights from a peer
+        console.log(`Exchanging weights with Peer Rank ${randomPeerRank}`);
+        const localWeights = model.getWeights();
+        const peerWeights = await simulatePeerWeights(); // Placeholder for real exchange
+
+        // Average weights
+        averageWeights(localWeights, peerWeights);
+        model.setWeights(localWeights);
+    }
+
+    // Function to simulate receiving weights from a peer (replace with real communication)
+    async function simulatePeerWeights() {
+        const newModel = tf.sequential();
+        newModel.add(tf.layers.dense({ units: 1, inputShape: [1] }));
+        newModel.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
+        await newModel.fit(tf.tensor2d([1, 2, 3, 4], [4, 1]), tf.tensor2d([1, 3, 5, 7], [4, 1]), { epochs: 1 });
+        return newModel.getWeights();
+    }
+
+    // Function to average weights with peer weights
+    function averageWeights(localWeights, peerWeights) {
+    const averagedWeights = localWeights.map((localWeight, i) => {
+        const localData = localWeight.dataSync();
+        const peerData = peerWeights[i].dataSync();
+        
+        // Calculate the average of each element in the tensors
+        const averagedData = localData.map((value, index) => (value + peerData[index]) / 2);
+        
+        // Return a new tensor with the averaged values
+        return tf.tensor(averagedData, localWeight.shape);
+    });
+    
+    // Set the model weights to the averaged weights
+    model.setWeights(averagedWeights);
+}
+
+
+    // Training loop
+    async function startFederatedTraining() {
+        while (true) {
+            console.log("Starting local training...");
+            await trainModel();
+
+            console.log("Starting weight exchange...");
+            await exchangeWeights();
+        }
+    }
+
+    // Start the federated training process
+    startFederatedTraining();
   </script>
 </body>
 </html>
