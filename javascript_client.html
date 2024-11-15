@@ -2,17 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>WebRTC Example</title>
+  <title>WebRTC Model Training</title>
 </head>
 <body>
-  <h2>WebRTC Data Channel with Python</h2>
-  <button id="sendButton" onclick="sendMessage()" disabled>Send Message to Python</button>
+  <h2>Simulated Model Training Between JavaScript and Python</h2>
+  <!-- <button id="sendButton" onclick="sendMessage()" disabled>Send Message to Python</button> -->
   <div id="messages"></div>
 
   <script>
     let pc = new RTCPeerConnection();
     let signaling = new WebSocket('ws://localhost:8765');
     let dataChannel = pc.createDataChannel("chat");
+    let rounds = 5;
+    let currentRound = 0;
 
     // Wait for the WebSocket to open before setting up the WebRTC connection
     signaling.onopen = () => {
@@ -36,13 +38,31 @@
 
     dataChannel.onopen = () => {
       console.log("Data Channel Opened");
-      document.getElementById("sendButton").disabled = false;
+    //   document.getElementById("sendButton").disabled = false;
     };
 
     dataChannel.onclose = () => console.log("Data Channel Closed");
 
-    dataChannel.onmessage = (event) => {
-      document.getElementById("messages").innerText += `Message from Python: ${event.data}\n`;
+    dataChannel.onmessage = async (event) => {
+      let data = JSON.parse(event.data);
+
+      if (data.weights && currentRound < rounds) {
+        console.log(`JavaScript received weights for round ${data.round + 1}`);
+        
+        // Simulate training by calling an async function
+        await simulateTraining(data.round + 1);
+
+        // Send back weights to Python
+        currentRound = data.round + 1;
+        dataChannel.send(JSON.stringify({ weights: data.weights, round: currentRound }));
+      }
+       
+      if (currentRound >= rounds) {
+        console.log("Training complete");
+        console.log("Closing data channel and peer connection from JavaScript");
+        dataChannel.close();
+        pc.close();
+      }
     };
 
     signaling.onmessage = async (message) => {
@@ -59,6 +79,12 @@
         await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
       }
     };
+
+    // Simulate training with a delay
+    async function simulateTraining(round) {
+      console.log(`JavaScript is training for round ${round}`);
+      return new Promise(resolve => setTimeout(resolve, 1000));  // 1 second delay
+    }
 
     // Send a message to the Python client if the data channel is open
     function sendMessage() {
