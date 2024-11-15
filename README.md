@@ -21,5 +21,6 @@ python ./on_device_training/conversion.py --data_flag 'bloodmnist' --output_dir 
 Navigate to ``on_device_training/web/web-bundler``, then:
 
 ```
+npm ci
 npm start
 ```
