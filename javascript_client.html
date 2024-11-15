@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WebRTC Example</title>
+</head>
+<body>
+  <h2>WebRTC Data Channel with Python</h2>
+  <button id="sendButton" onclick="sendMessage()" disabled>Send Message to Python</button>
+  <div id="messages"></div>
+
+  <script>
+    let pc = new RTCPeerConnection();
+    let signaling = new WebSocket('ws://localhost:8765');
+    let dataChannel = pc.createDataChannel("chat");
+
+    // Wait for the WebSocket to open before setting up the WebRTC connection
+    signaling.onopen = () => {
+      console.log("Signaling WebSocket connection opened");
+
+      // Create an offer and send it to the Python client
+      pc.createOffer().then(offer => pc.setLocalDescription(offer))
+        .then(() => {
+          signaling.send(JSON.stringify({ 'sdp': pc.localDescription }));
+        });
+    };
+
+    // Handle ICE candidates once WebSocket is open
+    pc.onicecandidate = ({ candidate }) => {
+      if (candidate && signaling.readyState === WebSocket.OPEN) {
+        signaling.send(JSON.stringify({ 'candidate': candidate }));
+      } else if (candidate) {
+        console.log("WebSocket not open, delaying candidate send");
+      }
+    };
+
+    dataChannel.onopen = () => {
+      console.log("Data Channel Opened");
+      document.getElementById("sendButton").disabled = false;
+    };
+
+    dataChannel.onclose = () => console.log("Data Channel Closed");
+
+    dataChannel.onmessage = (event) => {
+      document.getElementById("messages").innerText += `Message from Python: ${event.data}\n`;
+    };
+
+    signaling.onmessage = async (message) => {
+      let data = JSON.parse(message.data);
+
+      if (data.sdp) {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        if (data.sdp.type === "offer") {
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          signaling.send(JSON.stringify({ 'sdp': pc.localDescription }));
+        }
+      } else if (data.candidate) {
+        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+      }
+    };
+
+    // Send a message to the Python client if the data channel is open
+    function sendMessage() {
+      if (dataChannel.readyState === "open") {
+        dataChannel.send("Hello from JavaScript!");
+      } else {
+        console.error("Data Channel is not open!");
+      }
+    }
+  </script>
+</body>
+</html>
