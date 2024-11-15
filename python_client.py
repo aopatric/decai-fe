@@ -40,6 +40,7 @@ async def run():
                             # Deserialize received weights
                             deserialize_weights(model, data["weights"])
                             print(f"Received updated weights for round {current_round + 1} from JavaScript")
+                            print(f"Current weights: {data['weights']}")
                             current_round += 1
 
                             # If rounds are not complete, send the next weights
@@ -47,6 +48,7 @@ async def run():
                                 print(f"Python training round {current_round + 1}")
                                 time.sleep(1)  # Simulate training time
                                 weights = serialize_weights(model)
+                                print(f"Sending weights {weights}")
                                 channel.send(json.dumps({"weights": weights, "round": current_round}))
                             else:
                                 print("Training complete")
@@ -59,6 +61,7 @@ async def run():
                     print(f"Python training round {current_round + 1}")
                     time.sleep(1)  # Simulate training time
                     weights = serialize_weights(model)
+                    print(f"Sending weights {weights}")
                     channel.send(json.dumps({"weights": weights, "round": current_round}))
 
                 # Start the training and sending process

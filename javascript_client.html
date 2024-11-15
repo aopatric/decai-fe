@@ -48,12 +48,14 @@
 
       if (data.weights && currentRound < rounds) {
         console.log(`JavaScript received weights for round ${data.round + 1}`);
+        console.log(`Recieved weights: ${JSON.stringify(data.weights)}`);
         
         // Simulate training by calling an async function
         await simulateTraining(data.round + 1);
 
         // Send back weights to Python
         currentRound = data.round + 1;
+        console.log(`Sending weights ${JSON.stringify(data.weights)} for round ${currentRound}`);
         dataChannel.send(JSON.stringify({ weights: data.weights, round: currentRound }));
       }
        
