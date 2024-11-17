@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Federated Learning Node</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> <!-- TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web"></script>
   <style>
     body { font-family: Arial, sans-serif; text-align: center; }
   </style>
@@ -19,10 +19,8 @@
     let rank;
     let peers = {};
 
-    // Initialize a simple TensorFlow.js model
-    const model = tf.sequential();
-    model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
-    model.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
+    let model; // Placeholder for the ONNX model
+    const modelPath = './path-to-your-model.onnx'; // Update this to your model path
 
     // Initial handshake with the server
     socket.onopen = () => {
@@ -56,61 +54,80 @@
         console.log("Disconnected from the signaling server");
     };
 
-    // Function to train model and return weights
-    async function trainModel() {
-        const xs = tf.tensor2d([1, 2, 3, 4], [4, 1]);
-        const ys = tf.tensor2d([1, 3, 5, 7], [4, 1]);
-        await model.fit(xs, ys, { epochs: 1 });
-        return model.getWeights();
+    // Load the ONNX model
+    async function loadModel() {
+        console.log("Loading ONNX model...");
+        model = await ort.InferenceSession.create(modelPath);
+        console.log("Model loaded.");
     }
 
-    // Function to exchange weights with a random peer
+    // Train the model (dummy implementation)
+    async function trainModel() {
+        console.log("Training locally...");
+        const input = new ort.Tensor('float32', new Float32Array([1, 2, 3, 4]), [4, 1]); // Dummy input
+        const label = new ort.Tensor('float32', new Float32Array([1, 3, 5, 7]), [4, 1]); // Dummy labels
+
+        const feeds = { input: input, labels: label };
+        const results = await model.run(feeds); // Run training step
+        console.log("Training results:", results);
+
+        return exportWeights(); // Return updated weights
+    }
+
+    // Export model weights (simulate ONNX weights as JSON)
+    function exportWeights() {
+        // Simulate weight extraction (you need to implement a real method for ONNX)
+        console.log("Exporting weights...");
+        return [{ data: [/* Simulated weight data */], shape: [/* Weight shape */] }];
+    }
+
+    // Import received weights
+    function importWeights(receivedWeights) {
+        console.log("Importing received weights...");
+        // Simulate applying received weights (you need to implement this for ONNX)
+    }
+
+    // Exchange weights with a random peer
     async function exchangeWeights() {
-        const peerKeys = Object.keys(peers).filter(p => p != rank); // Filter out self
-        if (peerKeys.length === 0) return; // No peers to communicate with
+        const peerKeys = Object.keys(peers).filter((p) => p != rank); // Exclude self
+        if (peerKeys.length === 0) return;
 
         const randomPeerRank = peerKeys[Math.floor(Math.random() * peerKeys.length)];
         const randomPeer = peers[randomPeerRank];
 
-        // Simulate receiving weights from a peer
         console.log(`Exchanging weights with Peer Rank ${randomPeerRank}`);
-        const localWeights = model.getWeights();
-        const peerWeights = await simulatePeerWeights(); // Placeholder for real exchange
+        const localWeights = await exportWeights();
 
-        // Average weights
-        averageWeights(localWeights, peerWeights);
-        model.setWeights(localWeights);
+        // Send local weights to peer
+        socket.send(JSON.stringify({ type: 'weights', to: randomPeerRank, data: localWeights }));
+
+        // Simulate receiving weights from the peer
+        const receivedWeights = await simulatePeerWeights(); // Replace with real WebSocket response handling
+        averageWeights(localWeights, receivedWeights);
     }
 
-    // Function to simulate receiving weights from a peer (replace with real communication)
+    // Simulate receiving weights from a peer
     async function simulatePeerWeights() {
-        const newModel = tf.sequential();
-        newModel.add(tf.layers.dense({ units: 1, inputShape: [1] }));
-        newModel.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
-        await newModel.fit(tf.tensor2d([1, 2, 3, 4], [4, 1]), tf.tensor2d([1, 3, 5, 7], [4, 1]), { epochs: 1 });
-        return newModel.getWeights();
+        return [{ data: [/* Simulated peer weight data */], shape: [/* Weight shape */] }];
     }
 
-    // Function to average weights with peer weights
+    // Average weights
     function averageWeights(localWeights, peerWeights) {
-    const averagedWeights = localWeights.map((localWeight, i) => {
-        const localData = localWeight.dataSync();
-        const peerData = peerWeights[i].dataSync();
-        
-        // Calculate the average of each element in the tensors
-        const averagedData = localData.map((value, index) => (value + peerData[index]) / 2);
-        
-        // Return a new tensor with the averaged values
-        return tf.tensor(averagedData, localWeight.shape);
-    });
-    
-    // Set the model weights to the averaged weights
-    model.setWeights(averagedWeights);
-}
+        console.log("Averaging weights...");
+        const averagedWeights = localWeights.map((localWeight, i) => {
+            const localData = localWeight.data;
+            const peerData = peerWeights[i].data;
 
+            const averagedData = localData.map((value, index) => (value + peerData[index]) / 2);
+            return { data: averagedData, shape: localWeight.shape };
+        });
+
+        importWeights(averagedWeights); // Apply the averaged weights
+    }
 
     // Training loop
     async function startFederatedTraining() {
+        await loadModel();
         while (true) {
             console.log("Starting local training...");
             await trainModel();

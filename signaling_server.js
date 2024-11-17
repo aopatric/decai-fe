@@ -11,30 +11,36 @@ wss.on('connection', (ws) => {
     const ip = ws._socket.remoteAddress;
     const port = ws._socket.remotePort;
 
-    nodes[rank] = { ip, port };
+    nodes[rank] = ws;
 
     // Send the initial handshake response
     const initialResponse = {
         rank: rank,
-        peers: nodes  // Send current list of connected nodes
+        peers: Object.keys(nodes).reduce((peers, key) => {
+            peers[key] = { ip, port };
+            return peers;
+        }, {}),
     };
     ws.send(JSON.stringify(initialResponse));
 
-    // Broadcast updated peer list on new connection or disconnection
-    broadcastPeerList();
+    // Handle incoming messages (e.g., weight sharing)
+    ws.on('message', (message) => {
+        const data = JSON.parse(message);
+
+        if (data.type === 'weights') {
+            const { to, data: weights } = data;
+            const targetClient = nodes[to];
+
+            if (targetClient) {
+                console.log(`Forwarding weights from ${rank} to ${to}`);
+                targetClient.send(JSON.stringify({ type: 'weights', data: weights, from: rank }));
+            }
+        }
+    });
 
     // Handle node disconnection
     ws.on('close', () => {
         delete nodes[rank];
-        broadcastPeerList();
+        console.log(`Node ${rank} disconnected.`);
     });
-
-    function broadcastPeerList() {
-        const updatedPeers = JSON.stringify({ peers: nodes });
-        wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(updatedPeers);
-            }
-        });
-    }
 });
