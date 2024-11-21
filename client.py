@@ -1,3 +1,4 @@
+# python client, can communicate with signaling server then to js client through rtc datachannel
 import asyncio
 import json
 import os
