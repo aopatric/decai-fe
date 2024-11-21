@@ -1,180 +1,387 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Decentralized Learning Node</title>
-  <script src="https://unpkg.com/peerjs@1.3.2/dist/peerjs.min.js"></script> <!-- PeerJS CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web"></script> <!-- ONNX Runtime -->
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; }
-  </style>
+    <meta charset="UTF-8">
+    <title>Decentralized Learning Node</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .status-container {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .status-item {
+            margin: 5px 0;
+        }
+        .status-label {
+            font-weight: bold;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
 </head>
 <body>
-  <h1>Decentralized Learning Node</h1>
-  <p id="status">Connecting to PeerJS signaling server...</p>
-  <p id="peer-id">Peer ID: -</p>
-  <p id="peers">Peers: None</p>
+    <h1>Decentralized Learning Node</h1>
+    <div class="status-container">
+        <div class="status-item">
+            <span class="status-label">Status:</span>
+            <span id="status">Connecting to signaling server...</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Node Rank:</span>
+            <span id="rank">-</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Neighbors:</span>
+            <span id="neighbors">None</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Active Connections:</span>
+            <span id="connections">None</span>
+        </div>
+    </div>
 
-  <script>
-    const peerServerHost = "localhost"; // Change to your PeerJS server host
-    const peerServerPort = 9000; // Ensure this matches the PeerJS server port
-    const signalingPath = "/myapp"; // Ensure this matches the PeerJS server path
-
-    let peer;
-    let connections = {};
-    let connectedPeers = [];
-
-    // Initialize PeerJS
-    function connectPeerServer() {
-      peer = new Peer(undefined, {
-        host: peerServerHost,
-        port: peerServerPort,
-        path: signalingPath,
-      });
-
-      // When connected to PeerJS server
-      peer.on("open", (id) => {
-        console.log("Connected to PeerJS server with ID:", id);
-        document.getElementById("status").textContent = `Connected to PeerJS signaling server`;
-        document.getElementById("peer-id").textContent = `Peer ID: ${id}`;
-      });
-
-      // Listen for incoming connections
-      peer.on("connection", (conn) => {
-        if (!connections[conn.peer]) {
-          connections[conn.peer] = conn;
-          connectedPeers.push(conn.peer);
-          updatePeers();
-        }
-
-        conn.on("data", (data) => {
-          console.log("Received data from peer:", conn.peer, data);
-
-          if (data.type === "weights") {
-            console.log("Received weights from peer:", data.weights);
-            importWeights(data.weights);
+    <script>
+      class WebRTCNode {
+          constructor(signalingServer) {
+              this.signalingServer = signalingServer;
+              this.ws = null;
+              this.connections = new Map();
+              this.dataChannels = new Map();
+              this.rank = null;
+              this.neighbors = null;
+              this.pendingConnections = new Set();
+              
+              this.connect();
           }
-        });
 
-        conn.on("close", () => {
-          console.log("Connection closed with peer:", conn.peer);
-          delete connections[conn.peer];
-          connectedPeers = connectedPeers.filter((peerId) => peerId !== conn.peer);
-          updatePeers();
-        });
-      });
+          async connect() {
+              this.ws = new WebSocket(this.signalingServer);
+              
+              this.ws.onopen = () => {
+                  console.log('Connected to signaling server');
+                  this.ws.send(JSON.stringify({
+                      type: 'ready',
+                      clientType: 'javascript'
+                  }));
+                  document.getElementById('status').textContent = 'Connected to signaling server';
+              };
 
-      // Handle errors
-      peer.on("error", (err) => {
-        console.error("PeerJS Error:", err);
-      });
-    }
+              this.ws.onmessage = (event) => {
+                  const message = JSON.parse(event.data);
+                  this.handleSignalingMessage(message);
+              };
 
-    // Update peer list dynamically
-    function updatePeers() {
-      const peerList = connectedPeers.join(", ") || "None";
-      document.getElementById("peers").textContent = `Peers: ${peerList}`;
-      console.log("Updated peers:", connectedPeers);
-    }
+              this.ws.onclose = () => {
+                  console.log('Disconnected from signaling server');
+                  document.getElementById('status').textContent = 'Disconnected from signaling server';
+              };
 
-    // Connect to all known peers
-    function connectToPeers() {
-      if (peer.disconnected) return;
+              this.ws.onerror = (error) => {
+                  console.error('WebSocket error:', error);
+                  document.getElementById('status').textContent = 'Error connecting to server';
+              };
+          }
 
-      // Iterate through all peer IDs from PeerJS signaling server
-      const availablePeers = peer.listAllPeers((peerIds) => {
-        peerIds.forEach((peerId) => {
-          if (peerId !== peer.id && !connections[peerId]) {
-            const conn = peer.connect(peerId);
-            conn.on("open", () => {
-              console.log("Connected to peer:", peerId);
-              connections[peerId] = conn;
-              connectedPeers.push(peerId);
-              updatePeers();
-            });
-
-            conn.on("data", (data) => {
-              console.log("Received data from peer:", peerId, data);
-
-              if (data.type === "weights") {
-                console.log("Received weights from peer:", data.weights);
-                importWeights(data.weights);
+          async handleSignalingMessage(message) {
+              console.log('Received message:', message.type);
+              
+              switch (message.type) {
+                  case 'topology':
+                      await this.handleTopology(message);
+                      break;
+                  case 'signal':
+                      await this.handlePeerSignaling(message);
+                      break;
+                  case 'network_ready':
+                      document.getElementById('status').textContent = 'Network Ready';
+                      break;
               }
-            });
-
-            conn.on("close", () => {
-              console.log("Connection closed with peer:", peerId);
-              delete connections[peerId];
-              connectedPeers = connectedPeers.filter((id) => id !== peerId);
-              updatePeers();
-            });
           }
-        });
-      });
-    }
 
-    // Simulate a dummy ONNX model
-    let model;
-    async function loadDummyModel() {
-      console.log("Creating a dummy ONNX model...");
-      model = {
-        weights: [Math.random(), Math.random()], // Dummy weights
-        train: function () {
-          console.log("Training dummy model...");
-          this.weights = this.weights.map((w) => w + Math.random());
-        },
-        getWeights: function () {
-          return this.weights;
-        },
-      };
-      console.log("Dummy model created.");
-    }
+          async handleTopology(message) {
+              this.rank = message.rank;
+              this.neighbors = message.neighbors;
+              
+              console.log(`Received topology. Rank: ${this.rank}, Neighbors:`, this.neighbors);
+              this.updateConnectionsDisplay();
 
-    // Export model weights
-    function exportWeights() {
-      console.log("Exporting weights...");
-      return model.getWeights();
-    }
+              // Initiate connections to higher-ranked neighbors
+              for (const [direction, neighborRank] of Object.entries(this.neighbors)) {
+                  if (neighborRank > this.rank && !this.connections.has(neighborRank)) {
+                      console.log(`Initiating connection to higher-ranked neighbor ${neighborRank}`);
+                      await this.initiateConnection(neighborRank);
+                  }
+              }
 
-    // Import received weights
-    function importWeights(receivedWeights) {
-      console.log("Importing weights...");
-      model.weights = model.weights.map((w, i) => (w + receivedWeights[i]) / 2);
-      console.log("Updated weights:", model.weights);
-    }
+              // Start debug loop after receiving topology
+              this.startDebugLoop();
+          }
 
-    // Federated training loop
-    async function startFederatedTraining() {
-      await loadDummyModel();
+          async createPeerConnection(targetRank) {
+              const config = {
+                  iceServers: [
+                      { urls: 'stun:stun.l.google.com:19302' },
+                      { urls: 'stun:stun1.l.google.com:19302' }
+                  ],
+                  iceTransportPolicy: 'all',
+                  iceCandidatePoolSize: 10
+              };
+              
+              const pc = new RTCPeerConnection(config);
+              this.connections.set(targetRank, pc);
 
-      setInterval(() => {
-        console.log("Training locally...");
-        model.train();
+              pc.oniceconnectionstatechange = () => {
+                  console.log(`ICE connection state with ${targetRank}:`, pc.iceConnectionState);
+                  this.debugConnectionState(targetRank);
+                  this.updateConnectionsDisplay();
+              };
 
-        console.log("Starting weight exchange...");
-        exchangeWeights();
-      }, 5000); // Train and exchange weights every 5 seconds
-    }
+              pc.onconnectionstatechange = () => {
+                  console.log(`Connection state with ${targetRank}:`, pc.connectionState);
+                  this.debugConnectionState(targetRank);
+                  this.updateConnectionsDisplay();
+              };
 
-    // Exchange weights with connected peers
-    function exchangeWeights() {
-      connectedPeers.forEach((peerId) => {
-        const conn = connections[peerId];
-        if (conn && conn.open) {
-          const localWeights = exportWeights();
-          conn.send({
-            type: "weights",
-            weights: localWeights,
-          });
-          console.log("Sent weights to peer:", peerId);
-        }
-      });
-    }
+              pc.onicegatheringstatechange = () => {
+                  console.log(`ICE gathering state with ${targetRank}:`, pc.iceGatheringState);
+                  this.debugConnectionState(targetRank);
+              };
 
-    // Start application
-    connectPeerServer();
-    setTimeout(connectToPeers, 3000); // Wait for peers to connect before listing
-    startFederatedTraining();
-  </script>
+              pc.onsignalingstatechange = () => {
+                  console.log(`Signaling state with ${targetRank}:`, pc.signalingState);
+                  this.debugConnectionState(targetRank);
+              };
+
+              pc.onicecandidate = (event) => {
+                  if (event.candidate) {
+                      this.sendSignaling(targetRank, {
+                          type: 'candidate',
+                          candidate: {
+                              sdpMid: event.candidate.sdpMid,
+                              sdpMLineIndex: event.candidate.sdpMLineIndex,
+                              candidate: event.candidate.candidate
+                          }
+                      });
+                  }
+              };
+
+              pc.ondatachannel = (event) => {
+                  console.log(`Received data channel from ${targetRank}`);
+                  this.setupDataChannel(event.channel, targetRank);
+              };
+
+              return pc;
+          }
+
+          async initiateConnection(targetRank) {
+              try {
+                  const pc = await this.createPeerConnection(targetRank);
+                  
+                  // Create data channel
+                  const channel = pc.createDataChannel(`channel-${this.rank}-${targetRank}`);
+                  this.setupDataChannel(channel, targetRank);
+                  
+                  // Create and send offer
+                  const offer = await pc.createOffer();
+                  await pc.setLocalDescription(offer);
+                  
+                  this.sendSignaling(targetRank, {
+                      type: 'offer',
+                      sdp: pc.localDescription.sdp
+                  });
+              } catch (error) {
+                  console.error('Error initiating connection:', error);
+              }
+          }
+
+          setupDataChannel(channel, peerRank) {
+              this.dataChannels.set(peerRank, channel);
+
+              channel.onopen = () => {
+                  console.log(`Data channel opened with ${peerRank}`);
+                  this.updateConnectionsDisplay();
+                  this.notifyConnectionEstablished(peerRank);
+                  this.startPingPong(peerRank);
+              };
+
+              channel.onclose = () => {
+                  console.log(`Data channel closed with ${peerRank}`);
+                  this.dataChannels.delete(peerRank);
+                  this.updateConnectionsDisplay();
+              };
+
+              channel.onerror = (error) => {
+                  console.error(`Data channel error with ${peerRank}:`, error);
+              };
+
+              channel.onmessage = (event) => {
+                  try {
+                      const message = JSON.parse(event.data);
+                      if (message.type === 'ping') {
+                          channel.send(JSON.stringify({
+                              type: 'pong',
+                              timestamp: message.timestamp,
+                              respondedAt: Date.now()
+                          }));
+                      } else if (message.type === 'pong') {
+                          const rtt = Date.now() - message.timestamp;
+                          console.log(`RTT to ${peerRank}: ${rtt}ms`);
+                      }
+                  } catch (error) {
+                      console.error('Error processing message:', error);
+                  }
+              };
+          }
+
+          startPingPong(peerRank) {
+              setInterval(() => {
+                  const channel = this.dataChannels.get(peerRank);
+                  if (channel && channel.readyState === 'open') {
+                      channel.send(JSON.stringify({
+                          type: 'ping',
+                          timestamp: Date.now()
+                      }));
+                  }
+              }, 5000);
+          }
+
+          async handlePeerSignaling(message) {
+              const senderRank = message.senderRank;
+              const data = message.data;
+              
+              if (!this.connections.has(senderRank)) {
+                  await this.createPeerConnection(senderRank);
+              }
+              
+              const pc = this.connections.get(senderRank);
+
+              try {
+                  switch (data.type) {
+                      case 'offer':
+                          console.log(`Received offer from ${senderRank}`);
+                          await pc.setRemoteDescription(new RTCSessionDescription({
+                              type: 'offer',
+                              sdp: data.sdp
+                          }));
+                          
+                          const answer = await pc.createAnswer();
+                          await pc.setLocalDescription(answer);
+                          
+                          this.sendSignaling(senderRank, {
+                              type: 'answer',
+                              sdp: answer.sdp
+                          });
+                          break;
+                          
+                      case 'answer':
+                          console.log(`Received answer from ${senderRank}`);
+                          await pc.setRemoteDescription(new RTCSessionDescription({
+                              type: 'answer',
+                              sdp: data.sdp
+                          }));
+                          break;
+                          
+                      case 'candidate':
+                          console.log(`Received ICE candidate from ${senderRank}`);
+                          if (pc.remoteDescription) {
+                              try {
+                                  await pc.addIceCandidate(new RTCIceCandidate({
+                                      sdpMid: data.candidate.sdpMid,
+                                      sdpMLineIndex: data.candidate.sdpMLineIndex,
+                                      candidate: data.candidate.candidate
+                                  }));
+                              } catch (e) {
+                                  console.error('Error adding ICE candidate:', e);
+                              }
+                          }
+                          break;
+                  }
+              } catch (error) {
+                  console.error('Error handling peer signaling:', error);
+                  console.error('Message was:', message);
+              }
+          }
+
+          sendSignaling(targetRank, data) {
+              if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                  this.ws.send(JSON.stringify({
+                      type: 'signal',
+                      targetRank: targetRank,
+                      data: data
+                  }));
+              }
+          }
+
+          notifyConnectionEstablished(peerRank) {
+              if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                  this.ws.send(JSON.stringify({
+                      type: 'connection_established',
+                      peerRank: peerRank
+                  }));
+              }
+          }
+
+          debugConnectionState(peerRank) {
+              const pc = this.connections.get(peerRank);
+              if (pc) {
+                  console.log(`Debug connection state with ${peerRank}:`, {
+                      connectionState: pc.connectionState,
+                      iceConnectionState: pc.iceConnectionState,
+                      iceGatheringState: pc.iceGatheringState,
+                      signalingState: pc.signalingState,
+                      dataChannelState: this.dataChannels.get(peerRank)?.readyState || 'no channel'
+                  });
+              }
+          }
+
+          startDebugLoop() {
+              setInterval(() => {
+                  console.log('\n--- Debug Status Update ---');
+                  console.log('My rank:', this.rank);
+                  console.log('My neighbors:', this.neighbors);
+                  console.log('Pending connections:', Array.from(this.pendingConnections));
+                  
+                  if (this.neighbors) {
+                      Object.values(this.neighbors).forEach(neighborRank => {
+                          this.debugConnectionState(neighborRank);
+                      });
+                  }
+
+                  console.log('Active data channels:', Array.from(this.dataChannels.entries())
+                      .map(([rank, channel]) => `${rank}: ${channel.readyState}`)
+                      .join(', ') || 'None');
+                  console.log('------------------------\n');
+              }, 5000);
+          }
+
+          updateConnectionsDisplay() {
+              const activeConnections = Array.from(this.dataChannels.entries())
+                  .filter(([_, channel]) => channel.readyState === 'open')
+                  .map(([rank, _]) => rank);
+              
+              const connectionsStr = activeConnections.length > 0 ? 
+                  activeConnections.join(', ') : 'None';
+              
+              document.getElementById('connections').textContent = 
+                  `Active Connections: ${connectionsStr}`;
+
+              // Update other status displays
+              document.getElementById('rank').textContent = `Rank: ${this.rank || '-'}`;
+              document.getElementById('neighbors').textContent = 
+                  `Neighbors: ${this.neighbors ? JSON.stringify(this.neighbors) : 'None'}`;
+          }
+      }
+        const node = new WebRTCNode('ws://localhost:8080');
+    </script>
 </body>
 </html>

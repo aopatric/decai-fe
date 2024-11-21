@@ -1,100 +1,158 @@
 const { PeerServer } = require('peer');
 const WebSocket = require('ws');
 
-// Create a WebSocket signaling server
-const wss = new WebSocket.Server({ port: 8080 });
-const peerServer = PeerServer({ port: 9000, path: '/myapp' });
-
-let nodes = {}; // Store each node's details with rank as the key
-let rankCounter = 0; // Counter to assign unique ranks to each node
-
-console.log("WebSocket signaling server running on ws://localhost:8080");
-console.log("PeerJS server running on ws://localhost:9000/myapp");
-
-// WebSocket server events
-wss.on('connection', (ws) => {
-  const rank = rankCounter++; // Assign a unique rank to each new node
-  const ip = ws._socket.remoteAddress;
-  const port = ws._socket.remotePort;
-
-  // Add the node to the list
-  nodes[rank] = { ip, port };
-
-  console.log(`Node connected: Rank ${rank}, IP ${ip}, Port ${port}`);
-
-  // Send initial handshake response with rank and peer list
-  const initialResponse = {
-    rank: rank,
-    peers: nodes, // Include the current list of connected peers
-  };
-  ws.send(JSON.stringify(initialResponse));
-
-  // Notify all peers about the updated peer list
-  broadcastPeerList();
-
-  // Handle node disconnection
-  ws.on('close', () => {
-    console.log(`Node disconnected: Rank ${rank}`);
-    delete nodes[rank]; // Remove the node from the list
-    broadcastPeerList(); // Update the peer list for all clients
-  });
-
-  // Handle messages from clients (e.g., weight exchange, etc.)
-  ws.on('message', (message) => {
-    const data = JSON.parse(message);
-    console.log(`Message from Node Rank ${rank}:`, data);
-
-    if (data.type === 'weights') {
-      // Handle weight exchange logic (e.g., broadcast to a specific peer)
-      const targetRank = data.to;
-      const targetNode = nodes[targetRank];
-
-      if (targetNode) {
-        console.log(
-          `Forwarding weights from Node Rank ${rank} to Node Rank ${targetRank}`
-        );
-        broadcastToPeer(targetRank, data);
-      } else {
-        console.log(`Target Node Rank ${targetRank} not found.`);
-      }
+class Node {
+    constructor(ws, rank, clientType) {
+        this.ws = ws;
+        this.rank = rank;
+        this.clientType = clientType;
+        this.neighbors = {};
+        this.isReady = false;
     }
-  });
+}
 
-  /**
-   * Broadcast the updated peer list to all connected nodes
-   */
-  function broadcastPeerList() {
-    const updatedPeers = JSON.stringify({ peers: nodes });
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(updatedPeers);
-      }
-    });
-  }
+class SignalingServer {
+    constructor(wsPort = 8080, peerPort = 9000) {
+        this.wsPort = wsPort;
+        this.peerPort = peerPort;
+        this.nodes = new Map();
+        this.rankCounter = 0;
+        this.setupServers();
+    }
 
-  /**
-   * Broadcast a message to a specific peer
-   * @param {number} targetRank
-   * @param {object} message
-   */
-  function broadcastToPeer(targetRank, message) {
-    wss.clients.forEach((client) => {
-      if (
-        client.readyState === WebSocket.OPEN &&
-        client._socket.remoteAddress === nodes[targetRank].ip &&
-        client._socket.remotePort === nodes[targetRank].port
-      ) {
-        client.send(JSON.stringify(message));
-      }
-    });
-  }
-});
+    setupServers() {
+        // Setup WebSocket server
+        this.wss = new WebSocket.Server({ port: this.wsPort });
+        console.log(`WebSocket signaling server running on ws://localhost:${this.wsPort}`);
 
-// PeerJS signaling server events
-peerServer.on('connection', (client) => {
-  console.log(`PeerJS client connected: ${client.id}`);
-});
+        // Setup PeerJS server
+        this.peerServer = PeerServer({ port: this.peerPort, path: '/myapp' });
+        console.log(`PeerJS server running on ws://localhost:${this.peerPort}/myapp`);
 
-peerServer.on('disconnect', (client) => {
-  console.log(`PeerJS client disconnected: ${client.id}`);
-});
+        this.setupEventHandlers();
+    }
+
+    setupEventHandlers() {
+        this.wss.on('connection', this.handleConnection.bind(this));
+        
+        this.peerServer.on('connection', (client) => {
+            console.log(`PeerJS client connected: ${client.id}`);
+        });
+
+        this.peerServer.on('disconnect', (client) => {
+            console.log(`PeerJS client disconnected: ${client.id}`);
+        });
+    }
+
+    async handleConnection(ws) {
+        let node = null;
+
+        ws.on('message', async (message) => {
+            try {
+                const data = JSON.parse(message);
+                console.log('Received message:', data.type);
+
+                switch (data.type) {
+                    case 'ready':
+                        node = new Node(ws, this.rankCounter++, data.clientType);
+                        this.nodes.set(node.rank, node);
+                        console.log(`Node ${node.rank} (${node.clientType}) connected`);
+                        await this.updateTopology();
+                        break;
+
+                    case 'signal':
+                        if (node && this.nodes.has(data.targetRank)) {
+                            const targetNode = this.nodes.get(data.targetRank);
+                            await this.forwardSignal(targetNode, {
+                                type: 'signal',
+                                senderRank: node.rank,
+                                data: data.data
+                            });
+                        }
+                        break;
+
+                    case 'connection_established':
+                        if (node) {
+                            console.log(`Connection established between ${node.rank} and ${data.peerRank}`);
+                            await this.checkNetworkReady();
+                        }
+                        break;
+                }
+            } catch (error) {
+                console.error('Error handling message:', error);
+            }
+        });
+
+        ws.on('close', async () => {
+            if (node) {
+                console.log(`Node ${node.rank} disconnected`);
+                this.nodes.delete(node.rank);
+                await this.updateTopology();
+            }
+        });
+    }
+
+    async updateTopology() {
+        const ranks = Array.from(this.nodes.keys()).sort((a, b) => a - b);
+        
+        // Create a ring topology
+        for (const rank of ranks) {
+            const node = this.nodes.get(rank);
+            const nodeCount = ranks.length;
+            
+            // In a ring, each node connects to its neighbors
+            const leftNeighbor = (rank - 1 + nodeCount) % nodeCount;
+            const rightNeighbor = (rank + 1) % nodeCount;
+            
+            node.neighbors = {
+                left: ranks[leftNeighbor],
+                right: ranks[rightNeighbor]
+            };
+
+            // Send topology update to the node
+            await this.sendToNode(node, {
+                type: 'topology',
+                rank: node.rank,
+                neighbors: node.neighbors
+            });
+        }
+    }
+
+    async checkNetworkReady() {
+        // Check if all nodes have established their required connections
+        let allNodesConnected = true;
+        
+        for (const [rank, node] of this.nodes.entries()) {
+            const expectedConnections = Object.values(node.neighbors).length;
+            // For now, we'll assume nodes report their connections properly
+            // In a production system, you'd want to track this more carefully
+            
+            if (!node.isReady) {
+                allNodesConnected = false;
+                break;
+            }
+        }
+
+        if (allNodesConnected) {
+            // Notify all nodes that the network is ready
+            for (const node of this.nodes.values()) {
+                await this.sendToNode(node, {
+                    type: 'network_ready'
+                });
+            }
+        }
+    }
+
+    async sendToNode(node, message) {
+        if (node.ws.readyState === WebSocket.OPEN) {
+            node.ws.send(JSON.stringify(message));
+        }
+    }
+
+    async forwardSignal(targetNode, message) {
+        await this.sendToNode(targetNode, message);
+    }
+}
+
+// Start the server
+const server = new SignalingServer();
