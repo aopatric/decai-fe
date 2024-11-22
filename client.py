@@ -8,6 +8,7 @@ from collections import defaultdict
 from typing import Dict, Set
 from enum import Enum
 import time
+import argparse
 
 class NodeState(Enum):
     CONNECTING = 1
@@ -23,6 +24,7 @@ class TorusNode:
         self.connections: Dict[int, RTCPeerConnection] = {}
         self.data_channels: Dict[int, RTCDataChannel] = {}
         self.rank = None
+        self.session_id = None
         self.neighbors = None
         self.state = NodeState.CONNECTING
         self.state_lock = asyncio.Lock()
@@ -32,9 +34,9 @@ class TorusNode:
         self.RETRY_DELAY = 2
         self.pending_connections: Set[int] = set()
         self.connected_peers: Set[int] = set()
-        self.expected_connections = 0  # Track how many connections we expect
-        self.connection_timeout = 30  # Timeout in seconds for connection attempts
-        self.ice_gathering_timeout = 10 # Timeout in seconds for ICE gathering
+        self.expected_connections = 0
+        self.connection_timeout = 30
+        self.ice_gathering_timeout = 10
         self.logger = self.setup_logger()
 
     def setup_logger(self) -> logging.Logger:
@@ -114,7 +116,8 @@ class TorusNode:
         
         await self.websocket.send(json.dumps({
             "type": "connection_established",
-            "peerRank": peer_rank
+            "peerRank": peer_rank,
+            "sessionId": self.session_id,
         }))
 
     async def ping_loop(self, peer_rank: int):
@@ -320,43 +323,99 @@ class TorusNode:
         except Exception as e:
             logging.error(f"Error handling signaling message from {sender_rank}: {e}")
 
-    async def connect(self):
-        async with websockets.connect(self.signaling_server) as websocket:
-            self.websocket = websocket
+    async def create_session(self, max_clients: int):
+        try:
+            await self.websocket.send(json.dumps({
+                'type': 'create_session',
+                'maxClients': max_clients,
+                'clientType': 'python'
+            }))
+            response = await self.websocket.recv()
+            data = json.loads(response)
+            
+            if data['type'] == 'session_created':
+                self.session_id = data['sessionId']
+                self.rank = data['rank']
+                self.logger.info(f"Created session {self.session_id}")
+                print(f"Share this session code with other clients: {self.session_id}")
+            else:
+                self.logger.error(f"Failed to create session: {data.get('message', 'Unknown error')}")
+                return False
+            return True
+        except Exception as e:
+            self.logger.error(f"Error creating session: {e}")
+            return False
+
+    async def join_session(self, session_id: str):
+        try:
+            await self.websocket.send(json.dumps({
+                'type': 'join_session',
+                'sessionId': session_id,
+                'clientType': 'python'
+            }))
+            response = await self.websocket.recv()
+            data = json.loads(response)
+            
+            if data['type'] == 'session_joined':
+                self.session_id = data['sessionId']
+                self.rank = data['rank']
+                self.logger.info(f"Joined session {self.session_id} with rank {self.rank}")
+                return True
+            else:
+                self.logger.error(f"Failed to join session: {data.get('message', 'Unknown error')}")
+                return False
+        except Exception as e:
+            self.logger.error(f"Error joining session: {e}")
+            return False
+
+    async def connect(self, create: bool = False, session_id: str = None, max_clients: int = None):
+        try:
+            self.websocket = await websockets.connect(self.signaling_server)
             await self.change_state(NodeState.CONNECTING)
             
-            await websocket.send(json.dumps({
-                "type": "ready",
-                "clientType": "python"
-            }))
-            
-            # Start connection workers
+            if create:
+                if not max_clients:
+                    raise ValueError("max_clients is required when creating a session")
+                if not await self.create_session(max_clients):
+                    return
+            else:
+                if not session_id:
+                    raise ValueError("session_id is required when joining a session")
+                if not await self.join_session(session_id):
+                    return
+
             workers = [self.connection_worker() for _ in range(3)]
             worker_tasks = [asyncio.create_task(w) for w in workers]
             
             try:
                 async def process_messages():
                     while True:
-                        message = await websocket.recv()
+                        message = await self.websocket.recv()
                         data = json.loads(message)
                         self.logger.info(f"Node received message: {data['type']}")
                         
-                        if data["type"] == "topology":
+                        if data['type'] == 'session_ready':
+                            self.logger.info(data['message'])
+                        elif data['type'] == 'topology':
                             await self.handle_topology(data)
-                        elif data["type"] == "signal":
+                        elif data['type'] == 'signal':
                             await self.handle_signaling_message(data)
-                        elif data["type"] == "network_ready":
+                        elif data['type'] == 'network_ready':
                             await self.change_state(NodeState.READY)
-                            return  # Exit the message processing loop when network is ready
+                            self.logger.info("All connections established!")
+                            return
                 
                 await process_messages()
                 
             except Exception as e:
-                logging.error(f"Error in main loop: {e}")
+                self.logger.error(f"Error in main loop: {e}")
             finally:
                 for task in worker_tasks:
                     task.cancel()
                 await self.change_state(NodeState.DISCONNECTING)
+
+        except Exception as e:
+            self.logger.error(f"Connection error: {e}")
 
     async def handle_topology(self, data):
         self.rank = data["rank"]
@@ -387,12 +446,28 @@ class TorusNode:
             await self.websocket.send(json.dumps({
                 "type": "signal",
                 "targetRank": target_rank,
-                "data": data
+                "data": data,
+                "sessionId": self.session_id,
             }))
 
 async def main():
+    parser = argparse.ArgumentParser(description='Torus Node Client')
+    parser.add_argument('--create', action='store_true', help='Create a new session')
+    parser.add_argument('--join', type=str, help='Join an existing session with session ID')
+    parser.add_argument('--max-clients', type=int, help='Maximum number of clients for new session')
+    args = parser.parse_args()
+
     node = TorusNode("ws://localhost:8080")
-    await node.connect()
+    if args.create:
+        if not args.max_clients:
+            print("Error: --max-clients is required when creating a session")
+            return
+        await node.connect(create=True, max_clients=args.max_clients)
+    elif args.join:
+        await node.connect(create=False, session_id=args.join)
+    else:
+        print("Error: Must specify either --create or --join")
+        return
 
 if __name__ == "__main__":
     asyncio.run(main())
