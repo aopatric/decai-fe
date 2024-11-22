@@ -96,6 +96,9 @@
     <div id="log"></div>
 
     <script>
+        // ONNX setup
+        import * as ort from "onnxruntime-web";
+
         //logging helper    
         function log(message, type = 'info') {
             const logDiv = document.getElementById('log');
