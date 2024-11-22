@@ -12,3 +12,5 @@ pylibsrtp==0.10.0
 pyOpenSSL==24.2.1
 typing_extensions==4.12.2
 websockets==14.1
+medmnist
+tqdm
