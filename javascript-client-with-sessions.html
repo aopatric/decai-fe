@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebRTC Torus Node</title>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web"></script> <!-- ONNX Runtime -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -95,6 +96,22 @@
     <div id="log"></div>
 
     <script>
+        //logging helper    
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `${new Date().toISOString()} - ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+
+            if (type === 'info') {
+                console.log(message);
+            } else {
+                console.error(message);
+            }
+        }
+
         class TorusNode {
             constructor(signalingServer) {
                 this.signalingServer = signalingServer;
@@ -110,34 +127,35 @@
                 this.RETRY_DELAY = 2000;
                 this.sessionId = null;
 
-                this.log('Initializing TorusNode...');
+                // model for ONNX runtime
+                this.model = null;
+
+                log('Initializing TorusNode...');
             }
 
-            log(message, type = 'info') {
-                const logDiv = document.getElementById('log');
-                const entry = document.createElement('div');
-                entry.className = `log-entry log-${type}`;
-                entry.textContent = `${new Date().toISOString()} - ${message}`;
-                logDiv.appendChild(entry);
-                logDiv.scrollTop = logDiv.scrollHeight;
+            /*
+            
+            Helpers
 
-                if (type === 'info') {
-                    console.log(message);
-                } else {
-                    console.error(message);
-                }
-            }
+            */
+
 
             updateStatus(message) {
                 document.getElementById('status').textContent = `Status: ${message}`;
             }
+
+            /*
+            
+            Decentralized Communication
+
+            */
 
             async connect(sessionInfo) {
                 try {
                     this.ws = new WebSocket(this.signalingServer);
                     this.ws.onmessage = this.handleWsMessage.bind(this);
                     this.ws.onopen = () => {
-                        this.log('Connected to signaling server');
+                        log('Connected to signaling server');
                         this.ws.send(JSON.stringify({
                             // type: 'session_action',
                             type: sessionInfo.type,
@@ -147,13 +165,13 @@
                         }));
                     };
                 } catch (error) {
-                    this.log(`WebSocket connection error: ${error}`, 'error');
+                    log(`WebSocket connection error: ${error}`, 'error');
                 }
             }
 
             async handleWsMessage(event) {
                 const data = JSON.parse(event.data);
-                this.log(`Received ${data.type} message`);
+                log(`Received ${data.type} message`);
 
                 switch (data.type) {
                     case 'session_created':
@@ -169,7 +187,7 @@
                         break;
                     case 'session_error':
                         this.updateStatus(`Session Error: ${data.message}`);
-                        this.log(data.message, 'error');
+                        log(data.message, 'error');
                         break;
                     case 'topology':
                         await this.handleTopology(data);
@@ -186,7 +204,7 @@
             async handleTopology(data) {
                 this.rank = data.rank;
                 const newNeighbors = data.neighbors;
-                this.log(`Received topology. Rank: ${this.rank}, Neighbors: ${JSON.stringify(newNeighbors)}`);
+                log(`Received topology. Rank: ${this.rank}, Neighbors: ${JSON.stringify(newNeighbors)}`);
 
                 if (this.neighbors) {
                     const oldNeighbors = new Set(Object.values(this.neighbors));
@@ -207,7 +225,7 @@
                     if (neighborRank > this.rank && 
                         !this.connections.has(neighborRank) && 
                         !this.pendingConnections.has(neighborRank)) {
-                        this.log(`Initiating connection to ${neighborRank}`);
+                        log(`Initiating connection to ${neighborRank}`);
                         this.pendingConnections.add(neighborRank);
                         this.initiateConnection(neighborRank);
                     }
@@ -227,12 +245,12 @@
                 const pc = new RTCPeerConnection(config);
                 
                 pc.oniceconnectionstatechange = () => {
-                    this.log(`ICE connection state: ${pc.iceConnectionState}`);
+                    log(`ICE connection state: ${pc.iceConnectionState}`);
                 };
 
                 pc.onicecandidate = (event) => {
                     if (event.candidate) {
-                        this.log('ICE candidate generated');
+                        log('ICE candidate generated');
                     }
                 };
 
@@ -271,7 +289,7 @@
                     });
 
                 } catch (error) {
-                    this.log(`Failed to initiate connection to ${targetRank}: ${error}`, 'error');
+                    log(`Failed to initiate connection to ${targetRank}: ${error}`, 'error');
                     await this.handleConnectionFailure(targetRank);
                 }
             }
@@ -280,16 +298,16 @@
                 this.dataChannels.set(peerRank, channel);
 
                 channel.onopen = () => {
-                    this.log(`Data channel opened with peer ${peerRank}`);
+                    log(`Data channel opened with peer ${peerRank}`);
                     this.onPeerConnected(peerRank);
-                    this.startPingLoop(peerRank);
+                    this.startFederatedTrainingLoop(peerRank);
                 };
 
                 channel.onmessage = (event) => {
                     try {
                         const data = JSON.parse(event.data);
                         if (data.type === 'ping') {
-                            this.log(`Received ping from ${peerRank}`);
+                            log(`Received ping from ${peerRank}`);
                             channel.send(JSON.stringify({
                                 type: 'pong',
                                 timestamp: data.timestamp,
@@ -297,14 +315,18 @@
                             }));
                         } else if (data.type === 'pong') {
                             const rtt = Date.now() - data.timestamp;
-                            this.log(`Received pong from ${peerRank}, RTT: ${rtt}ms`);
+                            log(`Received pong from ${peerRank}, RTT: ${rtt}ms`);
+                        } else if (data.type === "weights") { // handle recieved weights
+                            log(`Recieved weights from ${peerRank}`);
+                            this.importWeights(data.weights);
                         }
                     } catch (error) {
-                        this.log(`Failed to parse message from ${peerRank}: ${error}`, 'error');
+                        log(`Failed to parse message from ${peerRank}: ${error}`, 'error');
                     }
                 };
             }
 
+            /* Old Pinging Loop, Replace this w/ Training Loop
             startPingLoop(peerRank) {
                 const sendPing = () => {
                     const channel = this.dataChannels.get(peerRank);
@@ -318,6 +340,24 @@
 
                 setInterval(sendPing, 5000);
             }
+            */
+
+            async startFederatedTrainingLoop(peerRank) {
+                await this.loadDummyModel();
+
+                // loop to train and then send weights to peer
+                const trainAndSend = () => {
+                    log("Running local training loop...");
+                    this.model.train();
+
+                    log(`Sending weights to connected peer rank ${peerRank}...`);
+                    this.sendWeights(peerRank);
+                }
+
+                setInterval(trainAndSend, 5000);
+            }
+
+
 
             async handleSignaling(message) {
                 const senderRank = message.senderRank;
@@ -358,7 +398,7 @@
                         });
                     }
                 } catch (error) {
-                    this.log(`Error handling signaling message: ${error}`, 'error');
+                    log(`Error handling signaling message: ${error}`, 'error');
                 }
             }
 
@@ -376,7 +416,7 @@
             onPeerConnected(peerRank) {
                 this.connectedPeers.add(peerRank);
                 this.pendingConnections.delete(peerRank);
-                this.log(`Connected to peer ${peerRank}. Connected: ${this.connectedPeers.size}/${this.expectedConnections}`);
+                log(`Connected to peer ${peerRank}. Connected: ${this.connectedPeers.size}/${this.expectedConnections}`);
 
                 this.ws.send(JSON.stringify({
                     type: 'connection_established',
@@ -395,7 +435,7 @@
                         this.initiateConnection(targetRank);
                     }
                 } else {
-                    this.log(`Max retries reached for ${targetRank}`, 'error');
+                    log(`Max retries reached for ${targetRank}`, 'error');
                     await this.cleanupConnection(targetRank);
                 }
             }
@@ -415,12 +455,74 @@
 
                     this.pendingConnections.delete(rank);
                     this.connectedPeers.delete(rank);
-                    this.log(`Cleaned up connection to peer ${rank}`);
+                    log(`Cleaned up connection to peer ${rank}`);
                 } catch (error) {
-                    this.log(`Error during connection cleanup for peer ${rank}: ${error}`, 'error');
+                    log(`Error during connection cleanup for peer ${rank}: ${error}`, 'error');
+                }
+            }
+
+            /*
+
+            Begin Training Methods
+
+            */
+
+            // loads ONNX model
+            async loadDummyModel() {
+                log("Creating a dummy ONNX model...");
+                this.model = {
+                    weights: [Math.random(), Math.random()], // get random dummy weights
+
+                    // define training function (adds random noise for now)
+                    train: function () {
+                        log("Training dummy ONNX model...");
+                        this.weights = this.weights.map((w) => w + Math.random());
+                    },
+                    
+                    // getter for the model weights
+                    getWeights: function () {
+                        return this.weights;
+                    },
+                };
+                log("Dummy ONNX model created.");
+            }
+
+            // export the model weights
+            exportWeights() {
+                log("Exporting weights...");
+                return this.model.getWeights();
+            }
+
+            // import model weights that we get from a peer
+            importWeights(recievedWeights) {
+                log("Importing weights...");
+                
+                // average our weights with the recieved peer weights
+                this.model.weights = this.model.weights.map((w, i) => w + recievedWeights[i] / 2);
+
+                log(`Updated weights.`);
+            }
+
+            // helper for sending the weights across peer datachannel
+            sendWeights = (peerRank) => {
+                const channel = this.dataChannels.get(peerRank);
+
+                if (channel && channel.readyState === "open") {
+                    // send our weights to the peer
+                    channel.send(JSON.stringify({
+                        type: "weights",
+                        weights: this.exportWeights(),
+                        timestamp: Date.now(),
+                    }));
                 }
             }
         }
+
+        /*
+
+        Session Handling
+
+        */
 
         let node = null;
 
