@@ -1,0 +1,40 @@
+2024-11-18 15:29:00,504 - INFO - Node 18 received topology. Neighbors: {'north': 14, 'south': 6, 'west': 17, 'east': 19}
+2024-11-18 15:29:00,504 - INFO - Node 18 queueing connection to 19
+2024-11-18 15:29:00,504 - INFO - Node 18 worker processing connection to 19
+2024-11-18 15:29:00,523 - INFO - ICE gathering state for 19: gathering
+2024-11-18 15:29:00,526 - INFO - Node received message: topology
+2024-11-18 15:29:00,526 - INFO - Node 18 received topology. Neighbors: {'north': 14, 'south': 6, 'west': 17, 'east': 19}
+2024-11-18 15:29:00,546 - INFO - ICE gathering state for 19: complete
+2024-11-18 15:29:10,555 - INFO - Node 18 successfully initiated connection to 19
+2024-11-18 15:29:10,589 - INFO - Node received message: signal
+2024-11-18 15:29:10,658 - INFO - Node received message: signal
+2024-11-18 15:29:10,662 - INFO - ICE connection state to 19: checking
+2024-11-18 15:29:10,684 - INFO - ICE connection state to 19: completed
+2024-11-18 15:29:10,700 - INFO - 18 Received ping from 17
+2024-11-18 15:29:10,701 - INFO - Data channel opened with peer 19
+2024-11-18 15:29:10,701 - INFO - Node 18 connected to peer 19. Connected: 1/4
+2024-11-18 15:29:10,702 - INFO - 18 Received pong from 19, RTT: 1.00ms
+2024-11-18 15:29:15,705 - INFO - 18 Received ping from 17
+2024-11-18 15:29:15,705 - INFO - 18 Received pong from 19, RTT: 2.17ms
+2024-11-18 15:29:20,704 - INFO - 18 Received ping from 17
+2024-11-18 15:29:20,705 - INFO - 18 Received pong from 19, RTT: 1.13ms
+2024-11-18 15:29:25,706 - INFO - 18 Received ping from 17
+2024-11-18 15:29:25,708 - INFO - 18 Received pong from 19, RTT: 3.16ms
+2024-11-18 15:29:30,709 - INFO - 18 Received ping from 17
+2024-11-18 15:29:30,713 - INFO - 18 Received pong from 19, RTT: 6.15ms
+2024-11-18 15:29:35,711 - INFO - 18 Received ping from 17
+2024-11-18 15:29:35,713 - INFO - 18 Received pong from 19, RTT: 4.84ms
+2024-11-18 15:29:40,712 - INFO - 18 Received ping from 17
+2024-11-18 15:29:40,713 - INFO - 18 Received pong from 19, RTT: 3.60ms
+2024-11-18 15:29:45,713 - INFO - 18 Received ping from 17
+2024-11-18 15:29:45,714 - INFO - 18 Received pong from 19, RTT: 3.13ms
+2024-11-18 15:29:50,712 - INFO - 18 Received pong from 19, RTT: 1.23ms
+2024-11-18 15:29:50,713 - INFO - 18 Received ping from 17
+2024-11-18 15:29:55,732 - INFO - 18 Received pong from 19, RTT: 17.56ms
+2024-11-18 15:29:55,741 - INFO - 18 Received ping from 17
+2024-11-18 15:30:00,718 - INFO - 18 Received pong from 19, RTT: 2.25ms
+2024-11-18 15:30:00,721 - INFO - 18 Received ping from 17
+2024-11-18 15:30:05,721 - INFO - 18 Received pong from 19, RTT: 3.36ms
+2024-11-18 15:30:05,722 - INFO - 18 Received ping from 17
+2024-11-18 15:30:10,724 - INFO - 18 Received pong from 19, RTT: 6.01ms
+2024-11-18 15:30:10,726 - INFO - 18 Received ping from 17

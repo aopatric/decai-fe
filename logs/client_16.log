@@ -1,0 +1,53 @@
+2024-11-18 15:29:00,465 - INFO - Node 16 received topology. Neighbors: {'north': 12, 'south': 4, 'west': 19, 'east': 17}
+2024-11-18 15:29:00,466 - INFO - Node 16 queueing connection to 19
+2024-11-18 15:29:00,467 - INFO - Node 16 queueing connection to 17
+2024-11-18 15:29:00,468 - INFO - Node 16 worker processing connection to 19
+2024-11-18 15:29:00,496 - INFO - Node 16 worker processing connection to 17
+2024-11-18 15:29:00,498 - INFO - ICE gathering state for 19: gathering
+2024-11-18 15:29:00,499 - INFO - ICE gathering state for 17: gathering
+2024-11-18 15:29:00,500 - INFO - Node received message: topology
+2024-11-18 15:29:00,500 - INFO - Node 16 received topology. Neighbors: {'north': 12, 'south': 4, 'west': 19, 'east': 17}
+2024-11-18 15:29:00,504 - INFO - Node received message: topology
+2024-11-18 15:29:00,504 - INFO - Node 16 received topology. Neighbors: {'north': 12, 'south': 4, 'west': 19, 'east': 17}
+2024-11-18 15:29:00,526 - INFO - Node received message: topology
+2024-11-18 15:29:00,526 - INFO - Node 16 received topology. Neighbors: {'north': 12, 'south': 4, 'west': 19, 'east': 17}
+2024-11-18 15:29:00,545 - INFO - ICE gathering state for 19: complete
+2024-11-18 15:29:00,547 - INFO - ICE gathering state for 17: complete
+2024-11-18 15:29:10,567 - INFO - Node 16 successfully initiated connection to 19
+2024-11-18 15:29:10,572 - INFO - Node 16 successfully initiated connection to 17
+2024-11-18 15:29:10,659 - INFO - Node received message: signal
+2024-11-18 15:29:10,670 - INFO - ICE connection state to 17: checking
+2024-11-18 15:29:10,688 - INFO - Node received message: signal
+2024-11-18 15:29:10,692 - INFO - ICE connection state to 19: checking
+2024-11-18 15:29:10,698 - INFO - ICE connection state to 17: completed
+2024-11-18 15:29:10,703 - INFO - Data channel opened with peer 17
+2024-11-18 15:29:10,703 - INFO - Node 16 connected to peer 17. Connected: 1/4
+2024-11-18 15:29:10,704 - INFO - 16 Received pong from 17, RTT: 0.97ms
+2024-11-18 15:29:10,713 - INFO - ICE connection state to 19: completed
+2024-11-18 15:29:10,716 - INFO - Data channel opened with peer 19
+2024-11-18 15:29:10,716 - INFO - Node 16 connected to peer 19. Connected: 2/4
+2024-11-18 15:29:10,717 - INFO - 16 Received pong from 19, RTT: 0.78ms
+2024-11-18 15:29:15,707 - INFO - 16 Received pong from 17, RTT: 2.55ms
+2024-11-18 15:29:15,718 - INFO - 16 Received pong from 19, RTT: 1.14ms
+2024-11-18 15:29:20,705 - INFO - 16 Received pong from 17, RTT: 0.87ms
+2024-11-18 15:29:20,719 - INFO - 16 Received pong from 19, RTT: 0.69ms
+2024-11-18 15:29:25,709 - INFO - 16 Received pong from 17, RTT: 2.87ms
+2024-11-18 15:29:25,721 - INFO - 16 Received pong from 19, RTT: 1.36ms
+2024-11-18 15:29:30,714 - INFO - 16 Received pong from 17, RTT: 5.08ms
+2024-11-18 15:29:30,721 - INFO - 16 Received pong from 19, RTT: 0.84ms
+2024-11-18 15:29:35,717 - INFO - 16 Received pong from 17, RTT: 6.32ms
+2024-11-18 15:29:35,723 - INFO - 16 Received pong from 19, RTT: 1.92ms
+2024-11-18 15:29:40,714 - INFO - 16 Received pong from 17, RTT: 2.42ms
+2024-11-18 15:29:40,722 - INFO - 16 Received pong from 19, RTT: 1.08ms
+2024-11-18 15:29:45,714 - INFO - 16 Received pong from 17, RTT: 2.09ms
+2024-11-18 15:29:45,723 - INFO - 16 Received pong from 19, RTT: 1.10ms
+2024-11-18 15:29:50,714 - INFO - 16 Received pong from 17, RTT: 1.02ms
+2024-11-18 15:29:50,723 - INFO - 16 Received pong from 19, RTT: 0.72ms
+2024-11-18 15:29:55,743 - INFO - 16 Received pong from 17, RTT: 24.62ms
+2024-11-18 15:29:55,743 - INFO - 16 Received pong from 19, RTT: 11.75ms
+2024-11-18 15:30:00,721 - INFO - 16 Received pong from 17, RTT: 1.33ms
+2024-11-18 15:30:00,734 - INFO - 16 Received pong from 19, RTT: 0.91ms
+2024-11-18 15:30:05,722 - INFO - 16 Received pong from 17, RTT: 2.15ms
+2024-11-18 15:30:05,735 - INFO - 16 Received pong from 19, RTT: 1.16ms
+2024-11-18 15:30:10,727 - INFO - 16 Received pong from 17, RTT: 5.50ms
+2024-11-18 15:30:10,737 - INFO - 16 Received pong from 19, RTT: 2.21ms

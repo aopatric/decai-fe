@@ -1,0 +1,127 @@
+2024-11-18 15:29:00,450 - INFO - Node 8 received topology. Neighbors: {'north': 5, 'south': 2, 'west': 7, 'east': 6}
+2024-11-18 15:29:00,450 - INFO - Node received message: topology
+2024-11-18 15:29:00,450 - INFO - Node 8 received topology. Neighbors: {'north': 5, 'south': 2, 'west': 7, 'east': 6}
+2024-11-18 15:29:00,454 - INFO - Node received message: topology
+2024-11-18 15:29:00,454 - INFO - Node 8 received topology. Neighbors: {'north': 5, 'south': 2, 'west': 7, 'east': 6}
+2024-11-18 15:29:00,454 - INFO - Node received message: topology
+2024-11-18 15:29:00,454 - INFO - Node 8 received topology. Neighbors: {'north': 5, 'south': 2, 'west': 7, 'east': 6}
+2024-11-18 15:29:00,454 - INFO - Node received message: topology
+2024-11-18 15:29:00,455 - INFO - Node 8 received topology. Neighbors: {'north': 5, 'south': 2, 'west': 7, 'east': 6}
+2024-11-18 15:29:00,463 - INFO - Node received message: topology
+2024-11-18 15:29:00,463 - INFO - Node 8 received topology. Neighbors: {'north': 5, 'south': 2, 'west': 7, 'east': 6}
+2024-11-18 15:29:00,463 - INFO - Node received message: topology
+2024-11-18 15:29:00,463 - INFO - Node 8 received topology. Neighbors: {'north': 5, 'south': 2, 'west': 7, 'east': 6}
+2024-11-18 15:29:00,464 - INFO - Node received message: topology
+2024-11-18 15:29:00,464 - INFO - Node 8 received topology. Neighbors: {'north': 4, 'south': 12, 'west': 11, 'east': 9}
+2024-11-18 15:29:00,464 - INFO - Cleaned up connection to peer 2
+2024-11-18 15:29:00,464 - INFO - Cleaned up connection to peer 5
+2024-11-18 15:29:00,464 - INFO - Cleaned up connection to peer 6
+2024-11-18 15:29:00,464 - INFO - Cleaned up connection to peer 7
+2024-11-18 15:29:00,464 - INFO - Node 8 queueing connection to 12
+2024-11-18 15:29:00,465 - INFO - Node 8 queueing connection to 11
+2024-11-18 15:29:00,465 - INFO - Node 8 queueing connection to 9
+2024-11-18 15:29:00,465 - INFO - Node 8 worker processing connection to 12
+2024-11-18 15:29:00,479 - INFO - Node 8 worker processing connection to 11
+2024-11-18 15:29:00,481 - INFO - Node 8 worker processing connection to 9
+2024-11-18 15:29:00,485 - INFO - Node received message: topology
+2024-11-18 15:29:00,485 - INFO - Node 8 received topology. Neighbors: {'north': 4, 'south': 12, 'west': 11, 'east': 9}
+2024-11-18 15:29:00,485 - INFO - ICE gathering state for 12: gathering
+2024-11-18 15:29:00,485 - INFO - ICE gathering state for 11: gathering
+2024-11-18 15:29:00,485 - INFO - ICE gathering state for 9: gathering
+2024-11-18 15:29:00,500 - INFO - Node received message: topology
+2024-11-18 15:29:00,500 - INFO - Node 8 received topology. Neighbors: {'north': 4, 'south': 12, 'west': 11, 'east': 9}
+2024-11-18 15:29:00,503 - INFO - Node received message: topology
+2024-11-18 15:29:00,503 - INFO - Node 8 received topology. Neighbors: {'north': 4, 'south': 12, 'west': 11, 'east': 9}
+2024-11-18 15:29:00,525 - INFO - Node received message: topology
+2024-11-18 15:29:00,526 - INFO - Node 8 received topology. Neighbors: {'north': 4, 'south': 12, 'west': 11, 'east': 9}
+2024-11-18 15:29:00,545 - INFO - ICE gathering state for 12: complete
+2024-11-18 15:29:00,547 - INFO - ICE gathering state for 11: complete
+2024-11-18 15:29:00,547 - INFO - ICE gathering state for 9: complete
+2024-11-18 15:29:10,582 - INFO - Node 8 successfully initiated connection to 12
+2024-11-18 15:29:10,582 - INFO - Node 8 successfully initiated connection to 11
+2024-11-18 15:29:10,582 - INFO - Node 8 successfully initiated connection to 9
+2024-11-18 15:29:10,587 - INFO - Node received message: signal
+2024-11-18 15:29:10,639 - INFO - Node received message: signal
+2024-11-18 15:29:10,665 - INFO - Node received message: signal
+2024-11-18 15:29:10,691 - INFO - Node received message: signal
+2024-11-18 15:29:10,726 - INFO - 8 Received ping from 4
+2024-11-18 15:29:10,738 - INFO - Node received message: signal
+2024-11-18 15:29:10,758 - INFO - Node received message: signal
+2024-11-18 15:29:10,758 - INFO - Node received message: signal
+2024-11-18 15:29:10,759 - INFO - ICE connection state to 12: checking
+2024-11-18 15:29:10,759 - INFO - Node received message: signal
+2024-11-18 15:29:10,760 - INFO - ICE connection state to 9: checking
+2024-11-18 15:29:10,760 - INFO - ICE connection state to 11: checking
+2024-11-18 15:29:10,763 - INFO - 8 Received ping from 2
+2024-11-18 15:29:10,780 - INFO - ICE connection state to 12: completed
+2024-11-18 15:29:10,781 - INFO - ICE connection state to 9: completed
+2024-11-18 15:29:10,782 - INFO - ICE connection state to 11: completed
+2024-11-18 15:29:10,784 - INFO - Data channel opened with peer 9
+2024-11-18 15:29:10,784 - INFO - Node 8 connected to peer 9. Connected: 1/4
+2024-11-18 15:29:10,784 - INFO - Data channel opened with peer 12
+2024-11-18 15:29:10,785 - INFO - Node 8 connected to peer 12. Connected: 2/4
+2024-11-18 15:29:10,785 - INFO - Data channel opened with peer 11
+2024-11-18 15:29:10,785 - INFO - Node 8 connected to peer 11. Connected: 3/4
+2024-11-18 15:29:10,785 - INFO - 8 Received pong from 9, RTT: 0.65ms
+2024-11-18 15:29:10,785 - INFO - 8 Received pong from 12, RTT: 0.48ms
+2024-11-18 15:29:10,785 - INFO - 8 Received pong from 11, RTT: 0.43ms
+2024-11-18 15:29:15,727 - INFO - 8 Received ping from 4
+2024-11-18 15:29:15,764 - INFO - 8 Received ping from 2
+2024-11-18 15:29:15,787 - INFO - 8 Received pong from 12, RTT: 1.30ms
+2024-11-18 15:29:15,787 - INFO - 8 Received pong from 9, RTT: 1.65ms
+2024-11-18 15:29:15,787 - INFO - 8 Received pong from 11, RTT: 1.74ms
+2024-11-18 15:29:20,728 - INFO - 8 Received ping from 4
+2024-11-18 15:29:20,765 - INFO - 8 Received ping from 2
+2024-11-18 15:29:20,788 - INFO - 8 Received pong from 9, RTT: 0.99ms
+2024-11-18 15:29:20,788 - INFO - 8 Received pong from 12, RTT: 1.10ms
+2024-11-18 15:29:20,788 - INFO - 8 Received pong from 11, RTT: 1.20ms
+2024-11-18 15:29:25,729 - INFO - 8 Received ping from 4
+2024-11-18 15:29:25,766 - INFO - 8 Received ping from 2
+2024-11-18 15:29:25,789 - INFO - 8 Received pong from 11, RTT: 1.06ms
+2024-11-18 15:29:25,789 - INFO - 8 Received pong from 9, RTT: 1.30ms
+2024-11-18 15:29:25,789 - INFO - 8 Received pong from 12, RTT: 1.39ms
+2024-11-18 15:29:30,731 - INFO - 8 Received ping from 4
+2024-11-18 15:29:30,767 - INFO - 8 Received ping from 2
+2024-11-18 15:29:30,790 - INFO - 8 Received pong from 11, RTT: 1.08ms
+2024-11-18 15:29:30,790 - INFO - 8 Received pong from 9, RTT: 1.42ms
+2024-11-18 15:29:30,791 - INFO - 8 Received pong from 12, RTT: 1.68ms
+2024-11-18 15:29:35,732 - INFO - 8 Received ping from 4
+2024-11-18 15:29:35,767 - INFO - 8 Received ping from 2
+2024-11-18 15:29:35,791 - INFO - 8 Received pong from 12, RTT: 0.88ms
+2024-11-18 15:29:35,791 - INFO - 8 Received pong from 11, RTT: 1.13ms
+2024-11-18 15:29:35,792 - INFO - 8 Received pong from 9, RTT: 1.35ms
+2024-11-18 15:29:40,733 - INFO - 8 Received ping from 4
+2024-11-18 15:29:40,769 - INFO - 8 Received ping from 2
+2024-11-18 15:29:40,795 - INFO - 8 Received pong from 9, RTT: 3.92ms
+2024-11-18 15:29:40,795 - INFO - 8 Received pong from 11, RTT: 4.07ms
+2024-11-18 15:29:40,802 - INFO - 8 Received pong from 12, RTT: 10.87ms
+2024-11-18 15:29:45,734 - INFO - 8 Received ping from 4
+2024-11-18 15:29:45,772 - INFO - 8 Received ping from 2
+2024-11-18 15:29:45,793 - INFO - 8 Received pong from 11, RTT: 0.84ms
+2024-11-18 15:29:45,793 - INFO - 8 Received pong from 9, RTT: 1.15ms
+2024-11-18 15:29:45,794 - INFO - 8 Received pong from 12, RTT: 1.58ms
+2024-11-18 15:29:50,735 - INFO - 8 Received ping from 4
+2024-11-18 15:29:50,773 - INFO - 8 Received ping from 2
+2024-11-18 15:29:50,797 - INFO - 8 Received pong from 9, RTT: 3.27ms
+2024-11-18 15:29:50,797 - INFO - 8 Received pong from 12, RTT: 3.51ms
+2024-11-18 15:29:50,798 - INFO - 8 Received pong from 11, RTT: 4.02ms
+2024-11-18 15:29:55,743 - INFO - 8 Received ping from 4
+2024-11-18 15:29:55,772 - INFO - 8 Received ping from 2
+2024-11-18 15:29:55,796 - INFO - 8 Received pong from 9, RTT: 1.15ms
+2024-11-18 15:29:55,796 - INFO - 8 Received pong from 12, RTT: 1.30ms
+2024-11-18 15:29:55,796 - INFO - 8 Received pong from 11, RTT: 1.51ms
+2024-11-18 15:30:00,741 - INFO - 8 Received ping from 4
+2024-11-18 15:30:00,772 - INFO - 8 Received ping from 2
+2024-11-18 15:30:00,796 - INFO - 8 Received pong from 9, RTT: 0.84ms
+2024-11-18 15:30:00,796 - INFO - 8 Received pong from 12, RTT: 1.11ms
+2024-11-18 15:30:00,796 - INFO - 8 Received pong from 11, RTT: 1.31ms
+2024-11-18 15:30:05,743 - INFO - 8 Received ping from 4
+2024-11-18 15:30:05,773 - INFO - 8 Received ping from 2
+2024-11-18 15:30:05,797 - INFO - 8 Received pong from 11, RTT: 1.13ms
+2024-11-18 15:30:05,797 - INFO - 8 Received pong from 12, RTT: 1.37ms
+2024-11-18 15:30:05,798 - INFO - 8 Received pong from 9, RTT: 1.60ms
+2024-11-18 15:30:10,747 - INFO - 8 Received ping from 4
+2024-11-18 15:30:10,774 - INFO - 8 Received ping from 2
+2024-11-18 15:30:10,798 - INFO - 8 Received pong from 12, RTT: 1.20ms
+2024-11-18 15:30:10,799 - INFO - 8 Received pong from 9, RTT: 1.43ms
+2024-11-18 15:30:10,799 - INFO - 8 Received pong from 11, RTT: 1.58ms

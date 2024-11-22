@@ -1,0 +1,113 @@
+2024-11-18 15:29:00,445 - INFO - Node 3 received topology. Neighbors: {'north': 1, 'south': 1, 'west': 2, 'east': 2}
+2024-11-18 15:29:00,445 - INFO - Node received message: topology
+2024-11-18 15:29:00,445 - INFO - Node 3 received topology. Neighbors: {'north': 1, 'south': 1, 'west': 2, 'east': 2}
+2024-11-18 15:29:00,448 - INFO - Node received message: topology
+2024-11-18 15:29:00,449 - INFO - Node 3 received topology. Neighbors: {'north': 1, 'south': 1, 'west': 2, 'east': 2}
+2024-11-18 15:29:00,449 - INFO - Node received message: topology
+2024-11-18 15:29:00,449 - INFO - Node 3 received topology. Neighbors: {'north': 1, 'south': 1, 'west': 2, 'east': 2}
+2024-11-18 15:29:00,449 - INFO - Node received message: topology
+2024-11-18 15:29:00,449 - INFO - Node 3 received topology. Neighbors: {'north': 1, 'south': 1, 'west': 2, 'east': 2}
+2024-11-18 15:29:00,449 - INFO - Node received message: topology
+2024-11-18 15:29:00,449 - INFO - Node 3 received topology. Neighbors: {'north': 0, 'south': 6, 'west': 5, 'east': 4}
+2024-11-18 15:29:00,449 - INFO - Cleaned up connection to peer 1
+2024-11-18 15:29:00,449 - INFO - Cleaned up connection to peer 2
+2024-11-18 15:29:00,449 - INFO - Node 3 queueing connection to 6
+2024-11-18 15:29:00,449 - INFO - Node 3 queueing connection to 5
+2024-11-18 15:29:00,449 - INFO - Node 3 queueing connection to 4
+2024-11-18 15:29:00,450 - INFO - Node 3 worker processing connection to 6
+2024-11-18 15:29:00,481 - INFO - Node 3 worker processing connection to 5
+2024-11-18 15:29:00,485 - INFO - Node 3 worker processing connection to 4
+2024-11-18 15:29:00,486 - INFO - Node received message: topology
+2024-11-18 15:29:00,486 - INFO - Node 3 received topology. Neighbors: {'north': 0, 'south': 6, 'west': 5, 'east': 4}
+2024-11-18 15:29:00,488 - INFO - ICE gathering state for 6: gathering
+2024-11-18 15:29:00,489 - INFO - ICE gathering state for 5: gathering
+2024-11-18 15:29:00,489 - INFO - ICE gathering state for 4: gathering
+2024-11-18 15:29:00,489 - INFO - Node received message: topology
+2024-11-18 15:29:00,489 - INFO - Node 3 received topology. Neighbors: {'north': 0, 'south': 6, 'west': 5, 'east': 4}
+2024-11-18 15:29:00,489 - INFO - Node received message: topology
+2024-11-18 15:29:00,489 - INFO - Node 3 received topology. Neighbors: {'north': 0, 'south': 6, 'west': 5, 'east': 4}
+2024-11-18 15:29:00,489 - INFO - Node received message: topology
+2024-11-18 15:29:00,489 - INFO - Node 3 received topology. Neighbors: {'north': 0, 'south': 6, 'west': 5, 'east': 4}
+2024-11-18 15:29:00,489 - INFO - Node received message: topology
+2024-11-18 15:29:00,489 - INFO - Node 3 received topology. Neighbors: {'north': 0, 'south': 6, 'west': 5, 'east': 4}
+2024-11-18 15:29:00,489 - INFO - Node received message: topology
+2024-11-18 15:29:00,489 - INFO - Node 3 received topology. Neighbors: {'north': 0, 'south': 6, 'west': 5, 'east': 4}
+2024-11-18 15:29:00,489 - INFO - Node received message: topology
+2024-11-18 15:29:00,490 - INFO - Node 3 received topology. Neighbors: {'north': 15, 'south': 7, 'west': 2, 'east': 0}
+2024-11-18 15:29:00,490 - INFO - Cleaned up connection to peer 4
+2024-11-18 15:29:00,490 - INFO - Cleaned up connection to peer 5
+2024-11-18 15:29:00,490 - INFO - Cleaned up connection to peer 6
+2024-11-18 15:29:00,490 - INFO - Node 3 queueing connection to 15
+2024-11-18 15:29:00,490 - INFO - Node 3 queueing connection to 7
+2024-11-18 15:29:00,490 - INFO - Node received message: topology
+2024-11-18 15:29:00,490 - INFO - Node 3 received topology. Neighbors: {'north': 15, 'south': 7, 'west': 2, 'east': 0}
+2024-11-18 15:29:00,490 - INFO - ICE connection state to 4: closed
+2024-11-18 15:29:00,490 - INFO - ICE connection state to 5: closed
+2024-11-18 15:29:00,490 - INFO - ICE connection state to 6: closed
+2024-11-18 15:29:00,499 - INFO - Node received message: topology
+2024-11-18 15:29:00,500 - INFO - Node 3 received topology. Neighbors: {'north': 15, 'south': 7, 'west': 2, 'east': 0}
+2024-11-18 15:29:00,503 - INFO - Node received message: topology
+2024-11-18 15:29:00,503 - INFO - Node 3 received topology. Neighbors: {'north': 15, 'south': 7, 'west': 2, 'east': 0}
+2024-11-18 15:29:00,525 - INFO - Node received message: topology
+2024-11-18 15:29:00,525 - INFO - Node 3 received topology. Neighbors: {'north': 15, 'south': 7, 'west': 2, 'east': 0}
+2024-11-18 15:29:10,554 - INFO - Node 3 successfully initiated connection to 4
+2024-11-18 15:29:10,554 - INFO - Node 3 worker processing connection to 15
+2024-11-18 15:29:10,584 - INFO - Node 3 successfully initiated connection to 6
+2024-11-18 15:29:10,584 - INFO - Node 3 worker processing connection to 7
+2024-11-18 15:29:10,585 - INFO - Node 3 successfully initiated connection to 5
+2024-11-18 15:29:10,589 - INFO - ICE gathering state for 15: gathering
+2024-11-18 15:29:10,589 - INFO - ICE gathering state for 7: gathering
+2024-11-18 15:29:10,591 - INFO - Node received message: signal
+2024-11-18 15:29:10,638 - INFO - ICE gathering state for 7: complete
+2024-11-18 15:29:10,639 - INFO - ICE gathering state for 15: complete
+2024-11-18 15:29:10,658 - INFO - Node received message: signal
+2024-11-18 15:29:10,686 - INFO - Node received message: signal
+2024-11-18 15:29:10,687 - INFO - Node received message: signal
+2024-11-18 15:29:10,690 - INFO - Node received message: signal
+2024-11-18 15:29:20,642 - INFO - Node 3 successfully initiated connection to 7
+2024-11-18 15:29:20,644 - INFO - Node 3 successfully initiated connection to 15
+2024-11-18 15:29:20,644 - INFO - Node received message: signal
+2024-11-18 15:29:20,666 - INFO - Node received message: signal
+2024-11-18 15:29:20,669 - INFO - Node received message: signal
+2024-11-18 15:29:20,670 - INFO - Node received message: signal
+2024-11-18 15:29:20,670 - INFO - ICE connection state to 7: checking
+2024-11-18 15:29:20,671 - INFO - ICE connection state to 15: checking
+2024-11-18 15:29:20,691 - INFO - ICE connection state to 7: completed
+2024-11-18 15:29:20,694 - INFO - ICE connection state to 15: completed
+2024-11-18 15:29:20,697 - INFO - Data channel opened with peer 7
+2024-11-18 15:29:20,697 - INFO - Node 3 connected to peer 7. Connected: 1/4
+2024-11-18 15:29:20,698 - INFO - Data channel opened with peer 15
+2024-11-18 15:29:20,698 - INFO - Node 3 connected to peer 15. Connected: 2/4
+2024-11-18 15:29:20,699 - INFO - 3 Received ping from 0
+2024-11-18 15:29:20,699 - INFO - 3 Received pong from 7, RTT: 1.25ms
+2024-11-18 15:29:20,699 - INFO - 3 Received pong from 15, RTT: 0.88ms
+2024-11-18 15:29:25,703 - INFO - 3 Received ping from 0
+2024-11-18 15:29:25,705 - INFO - 3 Received pong from 7, RTT: 3.52ms
+2024-11-18 15:29:25,707 - INFO - 3 Received pong from 15, RTT: 4.73ms
+2024-11-18 15:29:30,708 - INFO - 3 Received ping from 0
+2024-11-18 15:29:30,712 - INFO - 3 Received pong from 15, RTT: 5.45ms
+2024-11-18 15:29:30,713 - INFO - 3 Received pong from 7, RTT: 6.87ms
+2024-11-18 15:29:35,702 - INFO - 3 Received ping from 0
+2024-11-18 15:29:35,708 - INFO - 3 Received pong from 7, RTT: 0.67ms
+2024-11-18 15:29:35,708 - INFO - 3 Received pong from 15, RTT: 0.92ms
+2024-11-18 15:29:40,708 - INFO - 3 Received ping from 0
+2024-11-18 15:29:40,711 - INFO - 3 Received pong from 15, RTT: 2.11ms
+2024-11-18 15:29:40,712 - INFO - 3 Received pong from 7, RTT: 2.59ms
+2024-11-18 15:29:45,709 - INFO - 3 Received ping from 0
+2024-11-18 15:29:45,712 - INFO - 3 Received pong from 7, RTT: 2.05ms
+2024-11-18 15:29:45,713 - INFO - 3 Received pong from 15, RTT: 2.39ms
+2024-11-18 15:29:50,710 - INFO - 3 Received ping from 0
+2024-11-18 15:29:50,712 - INFO - 3 Received pong from 7, RTT: 1.08ms
+2024-11-18 15:29:50,712 - INFO - 3 Received pong from 15, RTT: 1.32ms
+2024-11-18 15:29:55,740 - INFO - 3 Received ping from 0
+2024-11-18 15:29:55,741 - INFO - 3 Received pong from 15, RTT: 25.87ms
+2024-11-18 15:29:55,742 - INFO - 3 Received pong from 7, RTT: 29.55ms
+2024-11-18 15:30:00,713 - INFO - 3 Received ping from 0
+2024-11-18 15:30:00,718 - INFO - 3 Received pong from 7, RTT: 1.77ms
+2024-11-18 15:30:00,718 - INFO - 3 Received pong from 15, RTT: 2.09ms
+2024-11-18 15:30:05,715 - INFO - 3 Received ping from 0
+2024-11-18 15:30:05,719 - INFO - 3 Received pong from 7, RTT: 2.41ms
+2024-11-18 15:30:05,719 - INFO - 3 Received pong from 15, RTT: 2.90ms
+2024-11-18 15:30:10,718 - INFO - 3 Received ping from 0
+2024-11-18 15:30:10,724 - INFO - 3 Received pong from 15, RTT: 4.21ms
+2024-11-18 15:30:10,725 - INFO - 3 Received pong from 7, RTT: 5.06ms

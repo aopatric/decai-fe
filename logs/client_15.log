@@ -1,0 +1,63 @@
+2024-11-18 15:29:00,464 - INFO - Node 15 received topology. Neighbors: {'north': 11, 'south': 3, 'west': 14, 'east': 12}
+2024-11-18 15:29:00,465 - INFO - Node received message: topology
+2024-11-18 15:29:00,466 - INFO - Node 15 received topology. Neighbors: {'north': 11, 'south': 3, 'west': 14, 'east': 12}
+2024-11-18 15:29:00,501 - INFO - Node received message: topology
+2024-11-18 15:29:00,502 - INFO - Node 15 received topology. Neighbors: {'north': 11, 'south': 3, 'west': 14, 'east': 12}
+2024-11-18 15:29:00,505 - INFO - Node received message: topology
+2024-11-18 15:29:00,506 - INFO - Node 15 received topology. Neighbors: {'north': 11, 'south': 3, 'west': 14, 'east': 12}
+2024-11-18 15:29:00,526 - INFO - Node received message: topology
+2024-11-18 15:29:00,526 - INFO - Node 15 received topology. Neighbors: {'north': 11, 'south': 3, 'west': 14, 'east': 12}
+2024-11-18 15:29:10,584 - INFO - Node received message: signal
+2024-11-18 15:29:10,654 - INFO - Node received message: signal
+2024-11-18 15:29:10,687 - INFO - Node received message: signal
+2024-11-18 15:29:10,701 - INFO - 15 Received ping from 12
+2024-11-18 15:29:10,762 - INFO - 15 Received ping from 11
+2024-11-18 15:29:10,763 - INFO - 15 Received ping from 14
+2024-11-18 15:29:15,705 - INFO - 15 Received ping from 12
+2024-11-18 15:29:15,764 - INFO - 15 Received ping from 14
+2024-11-18 15:29:15,764 - INFO - 15 Received ping from 11
+2024-11-18 15:29:20,645 - INFO - Node received message: signal
+2024-11-18 15:29:20,699 - INFO - 15 Received ping from 3
+2024-11-18 15:29:20,704 - INFO - 15 Received ping from 12
+2024-11-18 15:29:20,764 - INFO - 15 Received ping from 11
+2024-11-18 15:29:20,765 - INFO - 15 Received ping from 14
+2024-11-18 15:29:25,704 - INFO - 15 Received ping from 3
+2024-11-18 15:29:25,706 - INFO - 15 Received ping from 12
+2024-11-18 15:29:25,766 - INFO - 15 Received ping from 11
+2024-11-18 15:29:25,766 - INFO - 15 Received ping from 14
+2024-11-18 15:29:30,710 - INFO - 15 Received ping from 3
+2024-11-18 15:29:30,712 - INFO - 15 Received ping from 12
+2024-11-18 15:29:30,767 - INFO - 15 Received ping from 11
+2024-11-18 15:29:30,767 - INFO - 15 Received ping from 14
+2024-11-18 15:29:35,707 - INFO - 15 Received ping from 3
+2024-11-18 15:29:35,715 - INFO - 15 Received ping from 12
+2024-11-18 15:29:35,768 - INFO - 15 Received ping from 14
+2024-11-18 15:29:35,770 - INFO - 15 Received ping from 11
+2024-11-18 15:29:40,710 - INFO - 15 Received ping from 3
+2024-11-18 15:29:40,713 - INFO - 15 Received ping from 12
+2024-11-18 15:29:40,769 - INFO - 15 Received ping from 14
+2024-11-18 15:29:40,769 - INFO - 15 Received ping from 11
+2024-11-18 15:29:45,711 - INFO - 15 Received ping from 3
+2024-11-18 15:29:45,713 - INFO - 15 Received ping from 12
+2024-11-18 15:29:45,771 - INFO - 15 Received ping from 11
+2024-11-18 15:29:45,772 - INFO - 15 Received ping from 14
+2024-11-18 15:29:50,711 - INFO - 15 Received ping from 3
+2024-11-18 15:29:50,713 - INFO - 15 Received ping from 12
+2024-11-18 15:29:50,773 - INFO - 15 Received ping from 11
+2024-11-18 15:29:50,774 - INFO - 15 Received ping from 14
+2024-11-18 15:29:55,727 - INFO - 15 Received ping from 3
+2024-11-18 15:29:55,737 - INFO - 15 Received ping from 12
+2024-11-18 15:29:55,772 - INFO - 15 Received ping from 11
+2024-11-18 15:29:55,774 - INFO - 15 Received ping from 14
+2024-11-18 15:30:00,717 - INFO - 15 Received ping from 3
+2024-11-18 15:30:00,718 - INFO - 15 Received ping from 12
+2024-11-18 15:30:00,774 - INFO - 15 Received ping from 11
+2024-11-18 15:30:00,777 - INFO - 15 Received ping from 14
+2024-11-18 15:30:05,717 - INFO - 15 Received ping from 3
+2024-11-18 15:30:05,719 - INFO - 15 Received ping from 12
+2024-11-18 15:30:05,774 - INFO - 15 Received ping from 11
+2024-11-18 15:30:05,775 - INFO - 15 Received ping from 14
+2024-11-18 15:30:10,722 - INFO - 15 Received ping from 3
+2024-11-18 15:30:10,724 - INFO - 15 Received ping from 12
+2024-11-18 15:30:10,775 - INFO - 15 Received ping from 11
+2024-11-18 15:30:10,776 - INFO - 15 Received ping from 14
