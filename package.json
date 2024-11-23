@@ -1,0 +1,34 @@
+{
+  "name": "onnx-parcel-training",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "cross-env PORT=9000 webpack serve --config webpack.config.js",
+    "start:9001": "cross-env PORT=9001 webpack serve --config webpack.config.js",
+    "start:9002": "cross-env PORT=9002 webpack serve --config webpack.config.js",
+    "start:9003": "cross-env PORT=9003 webpack serve --config webpack.config.js",
+    "start:multiple": "concurrently \"npm run start:9001\" \"npm run start:9002\" \"npm run start:9003\""
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@babel/preset-env": "^7.26.0",
+    "babel-loader": "^9.2.1",
+    "copy-webpack-plugin": "^12.0.2",
+    "cross-env": "^7.0.3",
+    "css-loader": "^7.1.2",
+    "html-webpack-plugin": "^5.6.3",
+    "parcel": "^2.9.3",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.96.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.1.0"
+  },
+  "dependencies": {
+    "buffer": "^6.0.3",
+    "concurrently": "^9.1.0",
+    "crypto-browserify": "^3.12.1",
+    "onnxruntime-web": "^1.17.0",
+    "stream-browserify": "^3.0.0"
+  }
+}

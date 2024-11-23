@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Torus Node</title>
+</head>
+<body>
+    <h2>WebRTC Torus Node</h2>
+    
+    <div id="sessionForm">
+        <h3>Create New Session</h3>
+        <div class="form-group">
+            <label for="maxClients">Number of Clients:</label>
+            <input type="number" id="maxClients" min="2" value="4">
+        </div>
+        <div class="form-group">
+            <label for="sessionId">Session Code:</label>
+            <input type="text" id="sessionId" placeholder="Enter session code">
+        </div>
+        <button id="createSessionBtn">Create Session</button>
+    </div>
+
+    <div id="joinForm">
+        <h3>Join Existing Session</h3>
+        <div class="form-group">
+            <label for="joinSessionId">Session Code:</label>
+            <input type="text" id="joinSessionId" placeholder="Enter session code">
+        </div>
+        <button id="joinSessionBtn">Join Session</button>
+    </div>
+
+    <div id="status">Status: Not Connected</div>
+    <div id="log"></div>
+</body>
+</html>
