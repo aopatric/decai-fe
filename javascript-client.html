@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebRTC Torus Node</title>
-    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web"></script> <!-- ONNX Runtime -->
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.training.wasm.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -96,9 +96,6 @@
     <div id="log"></div>
 
     <script>
-        // ONNX setup
-        import * as ort from "onnxruntime-web";
-
         //logging helper    
         function log(message, type = 'info') {
             const logDiv = document.getElementById('log');
@@ -130,8 +127,9 @@
                 this.RETRY_DELAY = 2000;
                 this.sessionId = null;
 
-                // model for ONNX runtime
-                this.model = null;
+                this.artifact_path = "./public/training_artifacts/"
+                this.isTraining = false;
+                this.executionProviders = ['wasm'];
 
                 log('Initializing TorusNode...');
             }
@@ -346,15 +344,32 @@
             */
 
             async startFederatedTrainingLoop(peerRank) {
-                await this.loadDummyModel();
+                const trainAndSend = async () => {
+                    try {
+                        if (this.isTraining) {
+                            log("training already in progress. skipping this iteration");
+                            return;
+                        }
 
-                // loop to train and then send weights to peer
-                const trainAndSend = () => {
-                    log("Running local training loop...");
-                    this.model.train();
+                        this.isTraining = true;
+                        log("starting training iteration...");
 
-                    log(`Sending weights to connected peer rank ${peerRank}...`);
-                    this.sendWeights(peerRank);
+                        await this.train()
+
+                        const channel = this.dataChannels.get(peerRank);
+                        if (channel && channel.readyState === "open") {
+                            channel.send(JSON.stringify({
+                                type: "weights",
+                                weights: await this.exportWeights(),
+                                timestamp: Date.now()
+                            }));
+                            log(`Sent weights to ${peerRank}`);
+                        }
+                    } catch (error) {
+                        log(`error during training: ${error}`);
+                    } finally {
+                        this.isTraining = false;
+                    }
                 }
 
                 setInterval(trainAndSend, 5000);
@@ -470,54 +485,143 @@
 
             */
 
-            // loads ONNX model
-            async loadDummyModel() {
-                log("Creating a dummy ONNX model...");
-                this.model = {
-                    weights: [Math.random(), Math.random()], // get random dummy weights
+            async loadTrainingSession() {
+                log("starting training session...")
 
-                    // define training function (adds random noise for now)
-                    train: function () {
-                        log("Training dummy ONNX model...");
-                        this.weights = this.weights.map((w) => w + Math.random());
-                    },
-                    
-                    // getter for the model weights
-                    getWeights: function () {
-                        return this.weights;
-                    },
+                const chkptPath = this.artifact_path + "checkpoint";
+                const trainingPath = this.artifact_path + 'training_model.onnx';
+                const optimizerPath = this.artifact_path + 'optimizer_model.onnx';
+                const evalPath = this.artifact_path + 'eval_model.onnx';
+
+                const options = {
+                    checkpointState: chkptPath,
+                    trainModel: trainingPath,
+                    evalModel: evalPath,
+                    optimizerModel: optimizerPath,
+                    optimizerConfig: {
+                        name: "Adam",
+                        learningRate: 0.001,
+                        alpha: 0.9,
+                        beta: 0.999,
+                        epsilon: 1e-8
+                    }
                 };
-                log("Dummy ONNX model created.");
-            }
 
-            // export the model weights
-            exportWeights() {
-                log("Exporting weights...");
-                return this.model.getWeights();
-            }
-
-            // import model weights that we get from a peer
-            importWeights(recievedWeights) {
-                log("Importing weights...");
-                
-                // average our weights with the recieved peer weights
-                this.model.weights = this.model.weights.map((w, i) => w + recievedWeights[i] / 2);
-
-                log(`Updated weights.`);
-            }
-
-            // helper for sending the weights across peer datachannel
-            sendWeights = (peerRank) => {
-                const channel = this.dataChannels.get(peerRank);
-
-                if (channel && channel.readyState === "open") {
-                    // send our weights to the peer
-                    channel.send(JSON.stringify({
-                        type: "weights",
-                        weights: this.exportWeights(),
-                        timestamp: Date.now(),
-                    }));
+                try {
+                    this.session = await ort.TrainingSession.create(
+                        options.trainModel,
+                        options.evalModel,
+                        {
+                            optimizerModel: options.optimizerModel,
+                            checkpointState: options.checkpointState,
+                            ...options
+                        }
+                    );
+                    log("training session successfully loaded.")
+                    return this.session;
+                } catch (err) {
+                    log("error loading training session...")
+                    throw err;
                 }
+            };
+
+            
+        
+
+            async runTrainingEpoch(epoch) {
+                let batchNum = 0;
+                for await (const batch of this.dataSet.trainingBatches()) {
+                    ++batchNum;
+
+                    // create input
+                    const feeds = {
+                        input: batch.data,
+                        labels: batch.labels
+                    }
+
+                    // call train step
+                    const results = await this.session.runTrainStep(feeds);
+
+                    // update weights then reset gradients
+                    await this.session.runOptimizerStep();
+                    await this.session.lazyResetGrad();
+                }
+            }
+
+            async runTestingEpoch(epoch) {
+                let batchNum = 0;
+                let numCorrect = 0;
+                let testPicsSoFar = 0;
+                let accumulatedLoss = 0;
+                for await (const batch of dataSet.testBatches()) {
+                    ++batchNum;
+
+                    // create input
+                    const feeds = {
+                        input: batch.data,
+                        labels: batch.labels
+                    }
+
+                    // call eval step
+                    const results = await this.session.runEvalStep(feeds);
+
+                    // update UI with metrics
+                    const loss = parseFloat(results[lossNodeName].data);
+                    accumulatedLoss += loss;
+                    testPicsSoFar += batch.data.dims[0];
+                    numCorrect += countCorrectPredictions(results['output'], batch.labels);
+                }
+                const avgAcc = numCorrect / testPicsSoFar;
+                log("average accuracy", avgAcc)
+                return avgAcc;
+            }
+
+            async train(numEpochs=1) {
+                log("loading data...")
+                this.dataSet = new BloodMNIST(64);
+
+                for (let epoch = 0; epoch < numEpochs; epoch++) {
+                    await this.runTrainingEpoch(epoch);
+                    await this.runTestingEpoch(epoch)
+                }
+
+                log("training complete...")
+            }
+            
+            countCorrectPredictions(output, labels){
+                let result = 0;
+                const predictions = this.getPredictions(output);
+                for (let i = 0; i < predictions.length; ++i) {
+                    if (BigInt(predictions[i]) === labels.data[i]) {
+                        ++result;
+                    }
+                }
+                return result;
+            }
+
+            getPredictions(results) {
+                const predictions = [];
+                const [batchSize, numClasses] = results.dims;
+                for (let i = 0; i < batchSize; ++i) {
+                    const probabilities = results.data.slice(i * numClasses, (i + 1) * numClasses);
+                    const resultsLabel = indexOfMax(probabilities);
+                    predictions.push(resultsLabel);
+                }
+                return predictions;
+            }
+
+            indexOfMax(arr) {
+                if (arr.length === 0) {
+                    throw new Error('index of max (used in test accuracy function) expects a non-empty array. Something went wrong.');
+                }
+
+                let maxIndex = 0;
+                for (let i = 1; i < arr.length; i++) {
+                    if (arr[i] > arr[maxIndex]) {
+                        maxIndex = i;
+                    }
+                }
+                return maxIndex;
             }
         }
 
@@ -564,6 +668,148 @@
         function hideSessionForms() {
             document.getElementById('sessionForm').style.display = 'none';
             document.getElementById('joinForm').style.display = 'none';
+        }
+
+        class BloodMNIST {
+            constructor(batchSize = 64) {   
+                this.BATCH_SIZE = batchSize;
+                this.MAX_NUM_TRAIN_SAMPLES = 11959;
+                this.MAX_NUM_TEST_SAMPLES = 2487;
+                this.NUM_CHANNELS = 3;
+                this.IMAGE_SIZE = 28;
+                this.NUM_CLASSES = 8;
+                this.PIXEL_MAX = 255;
+                
+                // RGB normalization constants for BloodMNIST
+                this.PIXEL_MEANS = [0.7019, 0.5301, 0.5379];
+                this.PIXEL_STDS = [0.2330, 0.2656, 0.2584];
+
+                if (batchSize <= 0) {
+                    throw new Error("batchSize must be > 0");
+                }
+            }
+
+            getNumTrainingBatches() {
+                return Math.floor(this.MAX_NUM_TRAIN_SAMPLES / this.BATCH_SIZE);
+            }
+
+            getNumTestBatches() {
+                return Math.floor(this.MAX_NUM_TEST_SAMPLES / this.BATCH_SIZE);
+            }
+
+            normalizeChannel(pixelValue, channel) {
+                return ((pixelValue / this.PIXEL_MAX) - this.PIXEL_MEANS[channel]) / this.PIXEL_STDS[channel];
+            }
+
+            async *getBatches(data, labels) {
+                for (let i = 0; i < data.length; i++) {
+                    yield {
+                        data: data[i],
+                        labels: labels[i]
+                    };
+                }
+            }
+
+            async loadData(jsonData, dataType, maxNumSamples, normalize = true) {
+                const result = [];
+                
+                for (let i = 0; i < Math.min(jsonData[dataType].length, maxNumSamples); i += this.BATCH_SIZE) {
+                    const batchEnd = Math.min(i + this.BATCH_SIZE, jsonData[dataType].length);
+                    const batchSize = batchEnd - i;
+                    
+                    if (dataType === 'images') {
+                        // Process image data
+                        const batchData = new Float32Array(
+                            batchSize * this.NUM_CHANNELS * this.IMAGE_SIZE * this.IMAGE_SIZE
+                        );
+                        
+                        // Process each image in the batch
+                        for (let j = 0; j < batchSize; j++) {
+                            const image = jsonData.images[i + j];
+                            
+                            // Process each pixel
+                            for (let c = 0; c < this.NUM_CHANNELS; c++) {
+                                for (let h = 0; h < this.IMAGE_SIZE; h++) {
+                                    for (let w = 0; w < this.IMAGE_SIZE; w++) {
+                                        const pixelValue = image[h][w][c];
+                                        const index = j * (this.NUM_CHANNELS * this.IMAGE_SIZE * this.IMAGE_SIZE) +
+                                                    c * (this.IMAGE_SIZE * this.IMAGE_SIZE) +
+                                                    h * this.IMAGE_SIZE + w;
+                                        
+                                        batchData[index] = normalize ? 
+                                            this.normalizeChannel(pixelValue, c) : 
+                                            pixelValue;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Create tensor with shape [batch_size, channels, height, width]
+                        result.push(new ort.Tensor(
+                            'float32',
+                            batchData,
+                            [batchSize, this.NUM_CHANNELS, this.IMAGE_SIZE, this.IMAGE_SIZE]
+                        ));
+                        
+                    } else {
+                        // Process labels
+                        const batchLabels = jsonData.labels
+                            .slice(i, batchEnd)
+                            .map(label => BigInt(label));
+                        
+                        result.push(new ort.Tensor(
+                            'int64',
+                            new BigInt64Array(batchLabels),
+                            [batchSize]
+                        ));
+                    }
+                }
+                
+                return result;
+            }
+
+            async *trainingBatches(normalize = true) {
+                try {
+                    const response = await fetch('public/data/bloodmnist_train.json');
+                    const jsonData = await response.json();
+
+                    log(JSON.stringify(jsonData))
+                    
+                    const trainingData = await this.loadData(jsonData, 'image', this.MAX_NUM_TRAIN_SAMPLES, normalize);
+                    const trainingLabels = await this.loadData(jsonData, 'label', this.MAX_NUM_TRAIN_SAMPLES);
+                    
+                    yield* this.getBatches(trainingData, trainingLabels);
+                } catch (error) {
+                    console.error('Error loading training data:', error);
+                    throw error;
+                }
+            }
+
+            async *testBatches(normalize = true) {
+                try {
+                    const response = await fetch('public/data/bloodmnist_test.json');
+                    const jsonData = await response.json();
+                    
+                    const testData = await this.loadData(jsonData, 'image', this.MAX_NUM_TEST_SAMPLES, normalize);
+                    const testLabels = await this.loadData(jsonData, 'label', this.MAX_NUM_TEST_SAMPLES);
+                    
+                    yield* this.getBatches(testData, testLabels);
+                } catch (error) {
+                    console.error('Error loading test data:', error);
+                    throw error;
+                }
+            }
+
+            validateTensorShape(tensor, isData) {
+                const shape = tensor.dims;
+                if (isData) {
+                    return shape.length === 4 && 
+                        shape[1] === this.NUM_CHANNELS && 
+                        shape[2] === this.IMAGE_SIZE && 
+                        shape[3] === this.IMAGE_SIZE;
+                }
+                return shape.length === 1;
+            }
         }
     </script>
 </body>
