@@ -96,593 +96,168 @@
     <div id="log"></div>
 
     <script>
-        //logging helper    
-        function log(message, type = 'info') {
-            const logDiv = document.getElementById('log');
-            const entry = document.createElement('div');
-            entry.className = `log-entry log-${type}`;
-            entry.textContent = `${new Date().toISOString()} - ${message}`;
-            logDiv.appendChild(entry);
-            logDiv.scrollTop = logDiv.scrollHeight;
+        class BloodMNISTTrainer {
+            constructor(modelConfig, learningRate = 0.01) {
+                this.modelConfig = {
+                    checkpointPath: modelConfig.checkpointPath,
+                    evalModelPath: modelConfig.evalModelPath,
+                    optimizerModelPath: modelConfig.optimizerModelPath,
+                    trainingModelPath: modelConfig.trainingModelPath
+                };
+                this.learningRate = learningRate;
+                this.session = null;
 
-            if (type === 'info') {
-                console.log(message);
-            } else {
-                console.error(message);
-            }
-        }
-
-        class TorusNode {
-            constructor(signalingServer) {
-                this.signalingServer = signalingServer;
-                this.connections = new Map();
-                this.dataChannels = new Map();
-                this.rank = null;
-                this.neighbors = null;
-                this.connectedPeers = new Set();
-                this.pendingConnections = new Set();
-                this.expectedConnections = 0;
-                this.connectionRetries = new Map();
-                this.MAX_RETRIES = 3;
-                this.RETRY_DELAY = 2000;
-                this.sessionId = null;
-
-                this.artifact_path = "./public/training_artifacts/"
-                this.isTraining = false;
-                this.executionProviders = ['wasm'];
-
-                log('Initializing TorusNode...');
             }
 
-            /*
-            
-            Helpers
-
-            */
-
-
-            updateStatus(message) {
-                document.getElementById('status').textContent = `Status: ${message}`;
+            async loadModelFile(path) {
+                const response = await fetch(path);
+                if (!response.ok) {
+                    throw new Error(`Failed to load model file from ${path}: ${response.statusText}`);
+                }
+                const arrayBuffer = await response.arrayBuffer();
+                return new Uint8Array(arrayBuffer);
             }
 
-            /*
-            
-            Decentralized Communication
-
-            */
-
-            async connect(sessionInfo) {
+            async initialize() {
                 try {
-                    this.ws = new WebSocket(this.signalingServer);
-                    this.ws.onmessage = this.handleWsMessage.bind(this);
-                    this.ws.onopen = () => {
-                        log('Connected to signaling server');
-                        this.ws.send(JSON.stringify({
-                            // type: 'session_action',
-                            type: sessionInfo.type,
-                            sessionId: sessionInfo.sessionId,
-                            maxClients: sessionInfo.maxClients,
-                            clientType: 'javascript'
-                        }));
+                    console.log('Loading model files...');
+                    
+                    // Load all model files
+                    const [checkpoint, evalModel, optimizerModel, trainingModel] = await Promise.all([
+                        this.loadModelFile(this.modelConfig.checkpointPath),
+                        this.loadModelFile(this.modelConfig.evalModelPath),
+                        this.loadModelFile(this.modelConfig.optimizerModelPath),
+                        this.loadModelFile(this.modelConfig.trainingModelPath)
+                    ]);
+
+                    console.log('All model files loaded, creating training session...');
+
+                    // Training configuration
+                    const config = {
+                        checkpointState: checkpoint.buffer,
+                        evalModel: evalModel.buffer,
+                        optimizerModel: optimizerModel.buffer,
+                        trainingModel: trainingModel.buffer
                     };
+
+                    const response = await fetch(this.modelConfig.checkpointPath);
+                    console.log('Checkpoint response:', response.ok, response.status);
+
+                    // Create training session with the configuration
+                    this.session = await ort.TrainingSession.create(config);
+                    console.log('Training session created successfully');
+                    return true;
                 } catch (error) {
-                    log(`WebSocket connection error: ${error}`, 'error');
+                    console.error('Error initializing model:', error);
+                    throw error;
                 }
             }
 
-            async handleWsMessage(event) {
-                const data = JSON.parse(event.data);
-                log(`Received ${data.type} message`);
-
-                switch (data.type) {
-                    case 'session_created':
-                        this.updateStatus(`Session created. Waiting for ${data.remainingClients} more clients...`);
-                        this.sessionId = data.sessionId;
-                        break;
-                    case 'session_joined':
-                        this.updateStatus(`Joined session. Waiting for ${data.remainingClients} more clients...`);
-                        this.sessionId = data.sessionId;
-                        break;
-                    case 'session_ready':
-                        this.updateStatus('Session ready! Establishing connections...');
-                        break;
-                    case 'session_error':
-                        this.updateStatus(`Session Error: ${data.message}`);
-                        log(data.message, 'error');
-                        break;
-                    case 'topology':
-                        await this.handleTopology(data);
-                        break;
-                    case 'signal':
-                        await this.handleSignaling(data);
-                        break;
-                    case 'network_ready':
-                        this.updateStatus('Network Ready');
-                        break;
-                }
-            }
-
-            async handleTopology(data) {
-                this.rank = data.rank;
-                const newNeighbors = data.neighbors;
-                log(`Received topology. Rank: ${this.rank}, Neighbors: ${JSON.stringify(newNeighbors)}`);
-
-                if (this.neighbors) {
-                    const oldNeighbors = new Set(Object.values(this.neighbors));
-                    const newNeighborSet = new Set(Object.values(newNeighbors));
-                    for (const rank of oldNeighbors) {
-                        if (!newNeighborSet.has(rank)) {
-                            await this.cleanupConnection(rank);
-                        }
-                    }
+            async trainEpoch(dataLoader) {
+                if (!this.session) {
+                    throw new Error('Model not initialized. Call initialize() first.');
                 }
 
-                this.neighbors = newNeighbors;
-                this.expectedConnections = Object.keys(newNeighbors).length;
-                this.updateStatus(`Connected (Rank ${this.rank})`);
-
-                // Initiate connections to higher-ranked neighbors
-                for (const neighborRank of Object.values(newNeighbors)) {
-                    if (neighborRank > this.rank && 
-                        !this.connections.has(neighborRank) && 
-                        !this.pendingConnections.has(neighborRank)) {
-                        log(`Initiating connection to ${neighborRank}`);
-                        this.pendingConnections.add(neighborRank);
-                        this.initiateConnection(neighborRank);
-                    }
-                }
-            }
-
-            createPeerConnection() {
-                const config = {
-                    iceServers: [{
-                        urls: [
-                            'stun:stun.l.google.com:19302',
-                            'stun:stun1.l.google.com:19302'
-                        ]
-                    }]
-                };
-
-                const pc = new RTCPeerConnection(config);
+                let totalLoss = 0;
+                let batchCount = 0;
                 
-                pc.oniceconnectionstatechange = () => {
-                    log(`ICE connection state: ${pc.iceConnectionState}`);
-                };
-
-                pc.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        log('ICE candidate generated');
-                    }
-                };
-
-                return pc;
-            }
-
-            async initiateConnection(targetRank) {
                 try {
-                    const pc = this.createPeerConnection();
-                    this.connections.set(targetRank, pc);
+                    for await (const batch of dataLoader.trainingBatches('train.json')) {
+                        const { loss, accuracy } = await this.trainBatch(batch);
+                        totalLoss += loss;
+                        batchCount++;
 
-                    // Create data channel
-                    const channel = pc.createDataChannel(`chat-${this.rank}-${targetRank}`);
-                    this.setupDataChannel(channel, targetRank);
+                        if (batchCount % 10 === 0) {
+                            console.log(`Batch ${batchCount}: Loss = ${loss.toFixed(4)}, Accuracy = ${(accuracy * 100).toFixed(2)}%`);
+                        }
+                    }
 
-                    // Create and set local description
-                    const offer = await pc.createOffer();
-                    await pc.setLocalDescription(offer);
-
-                    // Wait for ICE gathering
-                    await new Promise(resolve => {
-                        const checkState = () => {
-                            if (pc.iceGatheringState === 'complete') {
-                                resolve();
-                            } else {
-                                setTimeout(checkState, 1000);
-                            }
-                        };
-                        checkState();
-                    });
-
-                    // Send offer
-                    await this.sendSignaling(targetRank, {
-                        type: 'offer',
-                        sdp: pc.localDescription.sdp
-                    });
-
+                    const averageLoss = totalLoss / batchCount;
+                    console.log(`Epoch completed. Average loss: ${averageLoss.toFixed(4)}`);
+                    
+                    return averageLoss;
                 } catch (error) {
-                    log(`Failed to initiate connection to ${targetRank}: ${error}`, 'error');
-                    await this.handleConnectionFailure(targetRank);
+                    console.error('Error during training:', error);
+                    throw error;
                 }
             }
 
-            setupDataChannel(channel, peerRank) {
-                this.dataChannels.set(peerRank, channel);
-
-                channel.onopen = () => {
-                    log(`Data channel opened with peer ${peerRank}`);
-                    this.onPeerConnected(peerRank);
-                    this.startFederatedTrainingLoop(peerRank);
+            async trainBatch(batch) {
+                const feeds = {
+                    'input': batch.data,
+                    'target': batch.labels
                 };
-
-                channel.onmessage = (event) => {
-                    try {
-                        const data = JSON.parse(event.data);
-                        if (data.type === 'ping') {
-                            log(`Received ping from ${peerRank}`);
-                            channel.send(JSON.stringify({
-                                type: 'pong',
-                                timestamp: data.timestamp,
-                                respondedAt: Date.now()
-                            }));
-                        } else if (data.type === 'pong') {
-                            const rtt = Date.now() - data.timestamp;
-                            log(`Received pong from ${peerRank}, RTT: ${rtt}ms`);
-                        } else if (data.type === "weights") { // handle recieved weights
-                            log(`Recieved weights from ${peerRank}`);
-                            this.importWeights(data.weights);
-                        }
-                    } catch (error) {
-                        log(`Failed to parse message from ${peerRank}: ${error}`, 'error');
-                    }
-                };
-            }
-
-            /* Old Pinging Loop, Replace this w/ Training Loop
-            startPingLoop(peerRank) {
-                const sendPing = () => {
-                    const channel = this.dataChannels.get(peerRank);
-                    if (channel && channel.readyState === 'open') {
-                        channel.send(JSON.stringify({
-                            type: 'ping',
-                            timestamp: Date.now()
-                        }));
-                    }
-                };
-
-                setInterval(sendPing, 5000);
-            }
-            */
-
-            async startFederatedTrainingLoop(peerRank) {
-                const trainAndSend = async () => {
-                    try {
-                        if (this.isTraining) {
-                            log("training already in progress. skipping this iteration");
-                            return;
-                        }
-
-                        this.isTraining = true;
-                        log("starting training iteration...");
-
-                        await this.train()
-
-                        const channel = this.dataChannels.get(peerRank);
-                        if (channel && channel.readyState === "open") {
-                            channel.send(JSON.stringify({
-                                type: "weights",
-                                weights: await this.exportWeights(),
-                                timestamp: Date.now()
-                            }));
-                            log(`Sent weights to ${peerRank}`);
-                        }
-                    } catch (error) {
-                        log(`error during training: ${error}`);
-                    } finally {
-                        this.isTraining = false;
-                    }
-                }
-
-                setInterval(trainAndSend, 5000);
-            }
-
-
-
-            async handleSignaling(message) {
-                const senderRank = message.senderRank;
-                const data = message.data;
 
                 try {
-                    let pc = this.connections.get(senderRank);
-                    if (!pc) {
-                        pc = this.createPeerConnection();
-                        this.connections.set(senderRank, pc);
+                    // Run training step
+                    const results = await this.session.train(feeds);
+                    const loss = results.loss;
 
-                        pc.ondatachannel = (event) => {
-                            this.setupDataChannel(event.channel, senderRank);
-                        };
-                    }
+                    // Run evaluation step
+                    const evalResults = await this.session.eval(feeds);
+                    const accuracy = this.calculateAccuracy(evalResults.output, batch.labels);
 
-                    if (data.type === 'offer') {
-                        await pc.setRemoteDescription(new RTCSessionDescription({
-                            type: 'offer',
-                            sdp: data.sdp
-                        }));
-                        const answer = await pc.createAnswer();
-                        await pc.setLocalDescription(answer);
-                        await this.sendSignaling(senderRank, {
-                            type: 'answer',
-                            sdp: answer.sdp,
-                        });
-                    } else if (data.type === 'answer') {
-                        await pc.setRemoteDescription(new RTCSessionDescription({
-                            type: 'answer',
-                            sdp: data.sdp
-                        }));
-                    } else if (data.type === 'candidate') {
-                        await pc.addIceCandidate({
-                            candidate: data.candidate,
-                            sdpMLineIndex: 0,
-                            sdpMid: '0'
-                        });
-                    }
+                    return { loss, accuracy };
                 } catch (error) {
-                    log(`Error handling signaling message: ${error}`, 'error');
+                    console.error('Error in training batch:', error);
+                    throw error;
                 }
             }
 
-            async sendSignaling(targetRank, data) {
-                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                    await this.ws.send(JSON.stringify({
-                        type: 'signal',
-                        targetRank: targetRank,
-                        data: data,
-                        sessionId: this.sessionId
-                    }));
-                }
-            }
+            calculateAccuracy(output, target) {
+                const predictions = output.data;
+                const labels = target.data;
+                let correct = 0;
 
-            onPeerConnected(peerRank) {
-                this.connectedPeers.add(peerRank);
-                this.pendingConnections.delete(peerRank);
-                log(`Connected to peer ${peerRank}. Connected: ${this.connectedPeers.size}/${this.expectedConnections}`);
-
-                this.ws.send(JSON.stringify({
-                    type: 'connection_established',
-                    peerRank: peerRank,
-                    sessionId: this.sessionId
-                }));
-            }
-
-            async handleConnectionFailure(targetRank) {
-                const retryCount = this.connectionRetries.get(targetRank) || 0;
-                if (retryCount < this.MAX_RETRIES) {
-                    this.connectionRetries.set(targetRank, retryCount + 1);
-                    await new Promise(resolve => setTimeout(resolve, this.RETRY_DELAY * (retryCount + 1)));
-                    if (!this.connectedPeers.has(targetRank)) {
-                        await this.cleanupConnection(targetRank);
-                        this.initiateConnection(targetRank);
+                for (let i = 0; i < labels.length; i++) {
+                    const label = Number(labels[i]);
+                    const pred = predictions.slice(i * 8, (i + 1) * 8); // Assuming 8 classes
+                    const predictedClass = pred.indexOf(Math.max(...pred));
+                    if (predictedClass === label) {
+                        correct++;
                     }
-                } else {
-                    log(`Max retries reached for ${targetRank}`, 'error');
-                    await this.cleanupConnection(targetRank);
                 }
+
+                return correct / labels.length;
             }
 
-            async cleanupConnection(rank) {
+            async saveCheckpoint(path) {
                 try {
-                    const pc = this.connections.get(rank);
-                    if (pc) {
-                        const channel = this.dataChannels.get(rank);
-                        if (channel) {
-                            channel.close();
-                            this.dataChannels.delete(rank);
-                        }
-                        pc.close();
-                        this.connections.delete(rank);
-                    }
-
-                    this.pendingConnections.delete(rank);
-                    this.connectedPeers.delete(rank);
-                    log(`Cleaned up connection to peer ${rank}`);
+                    const checkpoint = await this.session.getCheckpoint();
+                    const blob = new Blob([checkpoint], { type: 'application/octet-stream' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = path;
+                    a.click();
+                    
+                    URL.revokeObjectURL(url);
+                    console.log('Checkpoint saved successfully');
                 } catch (error) {
-                    log(`Error during connection cleanup for peer ${rank}: ${error}`, 'error');
+                    console.error('Error saving checkpoint:', error);
+                    throw error;
                 }
             }
-
-            /*
-
-            Begin Training Methods
-
-            */
-
-            async loadTrainingSession() {
-                log("starting training session...")
-
-                const chkptPath = this.artifact_path + "checkpoint";
-                const trainingPath = this.artifact_path + 'training_model.onnx';
-                const optimizerPath = this.artifact_path + 'optimizer_model.onnx';
-                const evalPath = this.artifact_path + 'eval_model.onnx';
-
-                const options = {
-                    checkpointState: chkptPath,
-                    trainModel: trainingPath,
-                    evalModel: evalPath,
-                    optimizerModel: optimizerPath,
-                    optimizerConfig: {
-                        name: "Adam",
-                        learningRate: 0.001,
-                        alpha: 0.9,
-                        beta: 0.999,
-                        epsilon: 1e-8
-                    }
-                };
-
-                try {
-                    this.session = await ort.TrainingSession.create(
-                        options.trainModel,
-                        options.evalModel,
-                        {
-                            optimizerModel: options.optimizerModel,
-                            checkpointState: options.checkpointState,
-                            ...options
-                        }
-                    );
-                    log("training session successfully loaded.")
-                    return this.session;
-                } catch (err) {
-                    log("error loading training session...")
-                    throw err;
-                }
-            };
-
-            
-        
-
-            async runTrainingEpoch(epoch) {
-                let batchNum = 0;
-                for await (const batch of this.dataSet.trainingBatches()) {
-                    ++batchNum;
-
-                    // create input
-                    const feeds = {
-                        input: batch.data,
-                        labels: batch.labels
-                    }
-
-                    // call train step
-                    const results = await this.session.runTrainStep(feeds);
-
-                    // update weights then reset gradients
-                    await this.session.runOptimizerStep();
-                    await this.session.lazyResetGrad();
-                }
-            }
-
-            async runTestingEpoch(epoch) {
-                let batchNum = 0;
-                let numCorrect = 0;
-                let testPicsSoFar = 0;
-                let accumulatedLoss = 0;
-                for await (const batch of dataSet.testBatches()) {
-                    ++batchNum;
-
-                    // create input
-                    const feeds = {
-                        input: batch.data,
-                        labels: batch.labels
-                    }
-
-                    // call eval step
-                    const results = await this.session.runEvalStep(feeds);
-
-                    // update UI with metrics
-                    const loss = parseFloat(results[lossNodeName].data);
-                    accumulatedLoss += loss;
-                    testPicsSoFar += batch.data.dims[0];
-                    numCorrect += countCorrectPredictions(results['output'], batch.labels);
-                }
-                const avgAcc = numCorrect / testPicsSoFar;
-                log("average accuracy", avgAcc)
-                return avgAcc;
-            }
-
-            async train(numEpochs=1) {
-                log("loading data...")
-                this.dataSet = new BloodMNIST(64);
-
-                for (let epoch = 0; epoch < numEpochs; epoch++) {
-                    await this.runTrainingEpoch(epoch);
-                    await this.runTestingEpoch(epoch)
-                }
-
-                log("training complete...")
-            }
-            
-            countCorrectPredictions(output, labels){
-                let result = 0;
-                const predictions = this.getPredictions(output);
-                for (let i = 0; i < predictions.length; ++i) {
-                    if (BigInt(predictions[i]) === labels.data[i]) {
-                        ++result;
-                    }
-                }
-                return result;
-            }
-
-            getPredictions(results) {
-                const predictions = [];
-                const [batchSize, numClasses] = results.dims;
-                for (let i = 0; i < batchSize; ++i) {
-                    const probabilities = results.data.slice(i * numClasses, (i + 1) * numClasses);
-                    const resultsLabel = indexOfMax(probabilities);
-                    predictions.push(resultsLabel);
-                }
-                return predictions;
-            }
-
-            indexOfMax(arr) {
-                if (arr.length === 0) {
-                    throw new Error('index of max (used in test accuracy function) expects a non-empty array. Something went wrong.');
-                }
-
-                let maxIndex = 0;
-                for (let i = 1; i < arr.length; i++) {
-                    if (arr[i] > arr[maxIndex]) {
-                        maxIndex = i;
-                    }
-                }
-                return maxIndex;
-            }
-        }
-
-        /*
-
-        Session Handling
-
-        */
-
-        let node = null;
-
-        function createSession() {
-            const maxClients = document.getElementById('maxClients').value;
-            const sessionId = document.getElementById('sessionId').value || generateSessionId();
-            document.getElementById('sessionId').value = sessionId;
-
-            node = new TorusNode('ws://localhost:8080');
-            node.connect({
-                type: 'create_session',
-                sessionId: sessionId,
-                maxClients: parseInt(maxClients)
-            });
-        }
-
-        function joinSession() {
-            const sessionId = document.getElementById('joinSessionId').value;
-            if (!sessionId) {
-                alert('Please enter a session code');
-                return;
-            }
-
-            node = new TorusNode('ws://localhost:8080');
-            node.connect({
-                type: 'join_session',
-                sessionId: sessionId
-            });
-        }
-
-        function generateSessionId() {
-            return Math.random().toString(36).substring(2, 8).toUpperCase();
-        }
-
-        // Hide the forms once connected
-        function hideSessionForms() {
-            document.getElementById('sessionForm').style.display = 'none';
-            document.getElementById('joinForm').style.display = 'none';
         }
 
         class BloodMNIST {
-            constructor(batchSize = 64) {   
-                this.BATCH_SIZE = batchSize;
-                this.MAX_NUM_TRAIN_SAMPLES = 11959;
-                this.MAX_NUM_TEST_SAMPLES = 2487;
-                this.NUM_CHANNELS = 3;
-                this.IMAGE_SIZE = 28;
-                this.NUM_CLASSES = 8;
-                this.PIXEL_MAX = 255;
-                
-                // RGB normalization constants for BloodMNIST
-                this.PIXEL_MEANS = [0.7019, 0.5301, 0.5379];
-                this.PIXEL_STDS = [0.2330, 0.2656, 0.2584];
+            static BATCH_SIZE = 64;
+            static MAX_NUM_TRAIN_SAMPLES = 60000;
+            static MAX_NUM_TEST_SAMPLES = 10000;
+            static pixelMax = 255;
+            static pixelMean = 0.1307;
+            static pixelStd = 0.3081;
+            static IMAGE_SIZE = 224; // Updated for blood cell images
+            static NUM_CHANNELS = 1; // Grayscale images
+
+            constructor(batchSize = BloodMNIST.BATCH_SIZE, 
+                        maxNumTrainSamples = BloodMNIST.MAX_NUM_TRAIN_SAMPLES,
+                        maxNumTestSamples = BloodMNIST.MAX_NUM_TEST_SAMPLES) {
+                this.batchSize = batchSize;
+                this.maxNumTrainSamples = maxNumTrainSamples;
+                this.maxNumTestSamples = maxNumTestSamples;
+                this.imageSize = BloodMNIST.IMAGE_SIZE * BloodMNIST.IMAGE_SIZE;
 
                 if (batchSize <= 0) {
                     throw new Error("batchSize must be > 0");
@@ -690,127 +265,111 @@
             }
 
             getNumTrainingBatches() {
-                return Math.floor(this.MAX_NUM_TRAIN_SAMPLES / this.BATCH_SIZE);
+                return Math.floor(this.maxNumTrainSamples / this.batchSize);
             }
 
             getNumTestBatches() {
-                return Math.floor(this.MAX_NUM_TEST_SAMPLES / this.BATCH_SIZE);
+                return Math.floor(this.maxNumTestSamples / this.batchSize);
             }
 
-            normalizeChannel(pixelValue, channel) {
-                return ((pixelValue / this.PIXEL_MAX) - this.PIXEL_MEANS[channel]) / this.PIXEL_STDS[channel];
-            }
-
-            async *getBatches(data, labels) {
-                for (let i = 0; i < data.length; i++) {
+            *batches(data, labels) {
+                const numBatches = Math.floor(data.length / (this.batchSize * this.imageSize));
+                console.log(`Creating ${numBatches} batches with size ${this.batchSize} and image size ${BloodMNIST.IMAGE_SIZE}x${BloodMNIST.IMAGE_SIZE}`);
+                
+                for (let i = 0; i < numBatches; i++) {
+                    const start = i * this.batchSize * this.imageSize;
+                    const end = start + (this.batchSize * this.imageSize);
+                    
+                    const batchData = data.slice(start, end);
+                    const batchLabels = labels.slice(i * this.batchSize, (i + 1) * this.batchSize);
+                    
+                    // Create tensor with shape [batch_size, channels, height, width]
+                    const tensorData = new Float32Array(batchData);
                     yield {
-                        data: data[i],
-                        labels: labels[i]
+                        // Shape: [batch_size, channels, height, width]
+                        data: new ort.Tensor('float32', tensorData, [
+                            this.batchSize, 
+                            BloodMNIST.NUM_CHANNELS,
+                            BloodMNIST.IMAGE_SIZE,
+                            BloodMNIST.IMAGE_SIZE
+                        ]),
+                        labels: new ort.Tensor('int64', new BigInt64Array(batchLabels.map(BigInt)), [this.batchSize])
                     };
                 }
             }
 
-            async loadData(jsonData, dataType, maxNumSamples, normalize = true) {
-                const result = [];
+            async loadData(jsonUrl) {
+                const response = await fetch(jsonUrl);
+                const jsonData = await response.json();
                 
-                for (let i = 0; i < Math.min(jsonData[dataType].length, maxNumSamples); i += this.BATCH_SIZE) {
-                    const batchEnd = Math.min(i + this.BATCH_SIZE, jsonData[dataType].length);
-                    const batchSize = batchEnd - i;
-                    
-                    if (dataType === 'images') {
-                        // Process image data
-                        const batchData = new Float32Array(
-                            batchSize * this.NUM_CHANNELS * this.IMAGE_SIZE * this.IMAGE_SIZE
-                        );
-                        
-                        // Process each image in the batch
-                        for (let j = 0; j < batchSize; j++) {
-                            const image = jsonData.images[i + j];
-                            
-                            // Process each pixel
-                            for (let c = 0; c < this.NUM_CHANNELS; c++) {
-                                for (let h = 0; h < this.IMAGE_SIZE; h++) {
-                                    for (let w = 0; w < this.IMAGE_SIZE; w++) {
-                                        const pixelValue = image[h][w][c];
-                                        const index = j * (this.NUM_CHANNELS * this.IMAGE_SIZE * this.IMAGE_SIZE) +
-                                                    c * (this.IMAGE_SIZE * this.IMAGE_SIZE) +
-                                                    h * this.IMAGE_SIZE + w;
-                                        
-                                        batchData[index] = normalize ? 
-                                            this.normalizeChannel(pixelValue, c) : 
-                                            pixelValue;
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Create tensor with shape [batch_size, channels, height, width]
-                        result.push(new ort.Tensor(
-                            'float32',
-                            batchData,
-                            [batchSize, this.NUM_CHANNELS, this.IMAGE_SIZE, this.IMAGE_SIZE]
-                        ));
-                        
-                    } else {
-                        // Process labels
-                        const batchLabels = jsonData.labels
-                            .slice(i, batchEnd)
-                            .map(label => BigInt(label));
-                        
-                        result.push(new ort.Tensor(
-                            'int64',
-                            new BigInt64Array(batchLabels),
-                            [batchSize]
-                        ));
+                // Convert object with numeric keys to arrays
+                const numSamples = Object.keys(jsonData).length;
+                const images = [];
+                const labels = [];
+                
+                for (let i = 0; i < numSamples; i++) {
+                    const sample = jsonData[i];
+                    if (sample) {
+                        images.push(...sample.image); // Spread the image array
+                        labels.push(sample.label);
                     }
                 }
+
+                console.log(`Loaded ${labels.length} samples, image data length: ${images.length}`);
+                return { images, labels };
+            }
+
+            async *trainingBatches(trainJsonUrl, normalize = true) {
+                console.log("Loading training data...");
+                const { images, labels } = await this.loadData(trainJsonUrl);
+                console.log(`Loaded ${labels.length} training samples`);
                 
-                return result;
+                const normalizedImages = normalize ? 
+                    images.map(pixel => BloodMNIST.normalize(pixel)) : 
+                    images;
+                yield* this.batches(normalizedImages, labels);
             }
 
-            async *trainingBatches(normalize = true) {
-                try {
-                    const response = await fetch('public/data/bloodmnist_train.json');
-                    const jsonData = await response.json();
-
-                    log(JSON.stringify(jsonData))
-                    
-                    const trainingData = await this.loadData(jsonData, 'image', this.MAX_NUM_TRAIN_SAMPLES, normalize);
-                    const trainingLabels = await this.loadData(jsonData, 'label', this.MAX_NUM_TRAIN_SAMPLES);
-                    
-                    yield* this.getBatches(trainingData, trainingLabels);
-                } catch (error) {
-                    console.error('Error loading training data:', error);
-                    throw error;
-                }
+            async *testBatches(testJsonUrl, normalize = true) {
+                console.log("Loading test data...");
+                const { images, labels } = await this.loadData(testJsonUrl);
+                console.log(`Loaded ${labels.length} test samples`);
+                
+                const normalizedImages = normalize ? 
+                    images.map(pixel => BloodMNIST.normalize(pixel)) : 
+                    images;
+                yield* this.batches(normalizedImages, labels);
             }
 
-            async *testBatches(normalize = true) {
-                try {
-                    const response = await fetch('public/data/bloodmnist_test.json');
-                    const jsonData = await response.json();
-                    
-                    const testData = await this.loadData(jsonData, 'image', this.MAX_NUM_TEST_SAMPLES, normalize);
-                    const testLabels = await this.loadData(jsonData, 'label', this.MAX_NUM_TEST_SAMPLES);
-                    
-                    yield* this.getBatches(testData, testLabels);
-                } catch (error) {
-                    console.error('Error loading test data:', error);
-                    throw error;
-                }
-            }
-
-            validateTensorShape(tensor, isData) {
-                const shape = tensor.dims;
-                if (isData) {
-                    return shape.length === 4 && 
-                        shape[1] === this.NUM_CHANNELS && 
-                        shape[2] === this.IMAGE_SIZE && 
-                        shape[3] === this.IMAGE_SIZE;
-                }
-                return shape.length === 1;
+            static normalize(pixelValue) {
+                return ((pixelValue / this.pixelMax) - this.pixelMean) / this.pixelStd;
             }
         }
+
+
+        async function main() {
+            try{
+                const dataLoader = new BloodMNIST();
+                const trainer = new BloodMNISTTrainer({
+                    checkpointPath: "./public/training_artifacts/checkpoint",
+                    evalModelPath: "./public/training_artifacts/eval_model.onnx",
+                    optimizerModelPath: "./public/training_artifacts/optimizer_model.onnx",
+                    trainingModelPath: "./public/training_artifacts/training_model.onnx"
+                });
+
+                await trainer.initialize();
+
+                console.log("Starting training...")
+                const loss = await trainer.trainEpoch(dataLoader)
+
+                await trainer.saveCheckpoint("new_checkpoint.ckpt")
+            } catch (error) {
+                console.error("training fail:", error);
+                throw error;
+            }
+        }
+
+        main().catch(console.error);
     </script>
 </body>
 </html>
