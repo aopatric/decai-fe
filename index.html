@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logging Template</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        #title {
+            background: linear-gradient(to right, #2c3e50, #3498db);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #logging {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="title">
+        <h1>JS-PyTorch Web Demo</h1>
+    </div>
+    
+    <div id="logging"></div>
+    <!-- import js-pytorch -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-pytorch/0.7.2/js-pytorch-browser.js" 
+    integrity="sha512-l22t7GnqXvHBMCBvPUBdFO2TEYxnb1ziCGcDQcpTB2un16IPA4FE5SIZ8bUR+RwoDZGikQkWisO+fhnakXt9rg==" 
+    crossorigin="anonymous" 
+    referrerpolicy="no-referrer"></script>
+    <script>
+        // logging helper
+        function log(message) {
+            const loggingDiv = document.getElementById('logging');
+            const timestamp = new Date().toLocaleString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `
+                <span class="timestamp">[${timestamp}]</span>
+                <span class="message">${message}</span>
+            `;
+            loggingDiv.appendChild(logEntry);
+            // Auto-scroll to bottom
+            loggingDiv.scrollTop = loggingDiv.scrollHeight;
+        }
+
+        /* 
+
+        Define MedMNIST classification model
+        */
+
+        class SimpleModel extends nn.Module {
+            constructor(in_channels, image_size, n_classes) {
+                log(`Creating SimpleModel with in_channels=${in_channels} and n_classes=${n_classes}...`);
+
+                super();
+                
+                // medMNIST image size is 28x28
+                this.input_size = in_channels * image_size * image_size;
+                this.in_channels = in_channels;
+                this.image_size = image_size;
+
+                // note that by default, all layers are created on the GPU
+                this.layer1 = new nn.Linear(this.input_size, 128, 'gpu');
+                this.relu1 = new nn.ReLU();
+                this.layer2 = new nn.Linear(128, n_classes, 'gpu');
+                this.softmax = new nn.Softmax();
+            }
+
+            forward(x) {
+                let z;
+                z = this.layer1.forward(x);
+                z = this.relu1.forward(z);
+                z = this.layer2.forward(z);
+                z = this.softmax.forward(z);
+                return z;
+            }
+        }
+
+        class ModelTrainer {
+            constructor(in_channels, image_size, n_classes, epochs, train_loader, test_loader, batch_size) {
+                this.model = new SimpleModel(in_channels, image_size, n_classes);
+                this.epochs = epochs;
+                this.curr_epoch = 0;
+                this.train_loader = train_loader;
+                this.test_loader = test_loader;
+                this.loss_fn = new nn.CrossEntropyLoss();
+                this.optimizer = new optim.Adam(this.model.parameters(), 3e-3);
+                this.batch_size = batch_size;
+            }
+
+            run_training_epoch() {
+                this.curr_epoch++;
+                log(`Starting training pass for epoch ${this.curr_epoch}...`);
+                let sampleNum = 0;
+                let loss;
+                for (const sample of this.train_loader) {
+                    sampleNum++;
+                    log(`Training sample ${sampleNum}...`);
+                    // Convert image to tensor and reshape
+                    let x = torch.tensor(sample['image'], 'gpu', true);
+                    // Reshape to [batch_size, input_size]
+                    x = x.reshape([1, this.model.input_size]);  // Add batch dimension of 1
+                    log(`Input shape after reshape: [${x.shape}]`);
+                    
+                    let y = torch.tensor([sample['label']], 'gpu', true, {dtype: 'int64'});
+                    // No need to reshape y since it's a single label
+
+                    log(`Label shape [${y.shape}]`);
+                    log(`Label: [${y.data}]`);
+            
+                    let y_pred = this.model.forward(x);
+                    log(`Prediction shape [${y_pred.shape}]`);
+                    log(`Prediction: [${y_pred.data}]`);
+            
+                    loss = this.loss_fn(y_pred, y);
+            
+                    this.loss_fn.backward();
+                    this.optimizer.step();
+            
+                    this.optimizer.zero_grad();
+                }
+            }
+
+            run_testing_epoch() {
+                log(`Starting testing pass for epoch ${this.curr_epoch}...`);
+            
+                let total_loss = 0;  // Add 'let' declarations
+                let total_correct = 0;
+                
+                for (const sample of this.test_loader) {
+                    // Add reshape operations similar to training
+                    let x = torch.tensor(sample['image'], 'gpu', true);
+                    x = x.reshape([1, this.model.input_size]);
+                    
+                    let y = torch.tensor([sample['label']], 'gpu', true, {dtype: 'int64'});
+            
+                    let y_pred = this.model.forward(x);
+                    const loss = this.loss_fn.forward(y_pred, y);
+                    total_loss += loss.data;
+                }
+                log(`Testing pass for epoch ${this.curr_epoch} completed. Average loss: ${total_loss / this.test_loader.length}`);
+            }
+
+            train() {
+                log(`Starting training...`);
+                for (let i = 0; i < this.epochs; i++) {
+                    this.run_training_epoch();
+                    this.run_testing_epoch();
+                }
+                log(`Training completed after ${this.epochs} epochs.`);
+            }
+        }
+
+
+
+        async function main() {
+            try {
+                // Add error handling for fetch
+                const test_data = await fetch('./public/data/bloodmnist_test.json');
+                if (!test_data.ok) throw new Error(`HTTP error! status: ${test_data.status}`);
+                const test_loader = await test_data.json();
+        
+                const train_data = await fetch('./public/data/bloodmnist_train.json');
+                if (!train_data.ok) throw new Error(`HTTP error! status: ${train_data.status}`);
+                const train_loader = await train_data.json();
+        
+                const batch_size = 32; // Add appropriate batch size
+                const model_trainer = new ModelTrainer(3, 28, 8, 10, train_loader, test_loader, batch_size);
+                model_trainer.train();
+            } catch (error) {
+                log(`Error loading data: ${error.message}`);
+                console.error(error);
+            }
+        }
+        
+        main();
+    </script>
+</body>
+</html>
