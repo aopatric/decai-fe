@@ -1,6 +1,6 @@
 # JS-PyTorch BloodMNIST Web Demo
 
-## Usage:
+## Usage
 
 Currently *very* buggy, but run get_data.py to download the bloodMNIST dataset to the correct directory and then run index.html, and you can tweak the parameters as described at the bottom of that file.
 
