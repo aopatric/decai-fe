@@ -150,7 +150,7 @@
         }
 
         // helper to load the data from the jsons
-        async function load_data() {
+        async function load_data(max_samples) {
             try {
                 log_in_div(`loading data...`);
                 let train_response = await fetch('public/data/bloodmnist_train.json');
@@ -164,7 +164,7 @@
                 const train_data = JSON.parse(text);
                 
                 // Limit to first 1000 samples for testing
-                const MAX_SAMPLES = 1000;
+                const MAX_SAMPLES = max_samples;
                 const limited_data = train_data.slice(0, MAX_SAMPLES);
                 log_in_div(`Using ${limited_data.length} samples for training...`);
 
@@ -196,13 +196,25 @@
     
     
         // load data and run an experiment
-        async function run_experiment() {
-            let [train_x, train_y] = await load_data();
-            let trainer = new ModelTrainer(2352, 512, 8, 1);
+        async function run_experiment(max_samples, batch_size) {
+            // ensure max_samples is an integer multiple of batch_size
+            if (max_samples % batch_size !== 0) {
+                log(`Cannot run experiment with max_samples ${max_samples} and batch_size ${batch_size}, must be integer multiple.`)
+                return;
+            }
+
+            // usage (max_samples)
+            let [train_x, train_y] = await load_data(max_samples);
+
+            // Usage: (in_size, hidden_size, out_size, batch_size)
+            // constatne are there for bloodMNIST
+            let trainer = new ModelTrainer(2352, 512, 8, batch_size);
+            
+            // just pass the data to the trainer
             trainer.train(train_x, train_y);
         }
 
-        run_experiment();
+        run_experiment(6400, 64);
     </script>
 </body>
 </html>
