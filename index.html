@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logging Template</title>
+    <title>JS-PyTorch Web Demo</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,15 +21,15 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        #logging {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-            min-height: 200px;
-            max-height: 400px;
+        #log {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            height: 300px;
             overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
         }
 
         .log-entry {
@@ -38,11 +38,8 @@
             border-bottom: 1px solid #eee;
         }
 
-        .timestamp {
-            color: #666;
-            font-size: 0.9em;
-            margin-right: 10px;
-        }
+        .log-info { color: #0066cc; }
+        .log-error { color: #cc0000; }
     </style>
 </head>
 <body>
@@ -50,159 +47,162 @@
         <h1>JS-PyTorch Web Demo</h1>
     </div>
     
-    <div id="logging"></div>
+    <div id="log"></div>
     <!-- import js-pytorch -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-pytorch/0.7.2/js-pytorch-browser.js" 
     integrity="sha512-l22t7GnqXvHBMCBvPUBdFO2TEYxnb1ziCGcDQcpTB2un16IPA4FE5SIZ8bUR+RwoDZGikQkWisO+fhnakXt9rg==" 
     crossorigin="anonymous" 
     referrerpolicy="no-referrer"></script>
     <script>
-        // logging helper
-        function log(message) {
-            const loggingDiv = document.getElementById('logging');
-            const timestamp = new Date().toLocaleString();
-            const logEntry = document.createElement('div');
-            logEntry.className = 'log-entry';
-            logEntry.innerHTML = `
-                <span class="timestamp">[${timestamp}]</span>
-                <span class="message">${message}</span>
-            `;
-            loggingDiv.appendChild(logEntry);
-            // Auto-scroll to bottom
-            loggingDiv.scrollTop = loggingDiv.scrollHeight;
+        // Updated logging helper
+        function log_in_div(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `${new Date().toISOString()} - ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+
+            if (type === 'info') {
+                console.log(message);
+            } else {
+                console.error(message);
+            }
         }
 
-        /* 
-
-        Define MedMNIST classification model
-        */
-
-        class SimpleModel extends nn.Module {
-            constructor(in_channels, image_size, n_classes) {
-                log(`Creating SimpleModel with in_channels=${in_channels} and n_classes=${n_classes}...`);
-
-                super();
-                
-                // medMNIST image size is 28x28
-                this.input_size = in_channels * image_size * image_size;
-                this.in_channels = in_channels;
-                this.image_size = image_size;
-
-                // note that by default, all layers are created on the GPU
-                this.layer1 = new nn.Linear(this.input_size, 128, 'gpu');
-                this.relu1 = new nn.ReLU();
-                this.layer2 = new nn.Linear(128, n_classes, 'gpu');
-                this.softmax = new nn.Softmax();
-            }
-
+        // Classification Model Definition
+        class BloodMNISTNet extends nn.Module {
+            constructor(in_size, hidden_size, out_size) {
+            super();
+            log_in_div(`Creating new BloodMNISTNet with input size ${in_size}, hidden size ${hidden_size}, and output size ${out_size}...`);
+            // Instantiate Neural Network's Layers:
+            this.w1 = new nn.Linear(in_size, hidden_size);
+            this.relu1 = new nn.ReLU();
+            this.w2 = new nn.Linear(hidden_size, hidden_size);
+            this.relu2 = new nn.ReLU();
+            this.w3 = new nn.Linear(hidden_size, out_size);
+            };
+        
             forward(x) {
-                let z;
-                z = this.layer1.forward(x);
-                z = this.relu1.forward(z);
-                z = this.layer2.forward(z);
-                z = this.softmax.forward(z);
-                return z;
-            }
-        }
+            let z;
+            z = this.w1.forward(x);
+            z = this.relu1.forward(z);
+            z = this.w2.forward(z);
+            z = this.relu2.forward(z);
+            z = this.w3.forward(z);
+            return z;
+            };
+        };
 
         class ModelTrainer {
-            constructor(in_channels, image_size, n_classes, epochs, train_loader, test_loader, batch_size) {
-                this.model = new SimpleModel(in_channels, image_size, n_classes);
-                this.epochs = epochs;
-                this.curr_epoch = 0;
-                this.train_loader = train_loader;
-                this.test_loader = test_loader;
-                this.loss_fn = new nn.CrossEntropyLoss();
-                this.optimizer = new optim.Adam(this.model.parameters(), 3e-3);
+            constructor(in_size, hidden_size, out_size, batch_size) {
+                log_in_div(`building test constructor...`);
+                this.in_size = in_size;
+                this.hidden_size = hidden_size;
+                this.out_size = out_size;
                 this.batch_size = batch_size;
             }
-
-            run_training_epoch() {
-                this.curr_epoch++;
-                log(`Starting training pass for epoch ${this.curr_epoch}...`);
-                let sampleNum = 0;
-                let loss;
-                for (const sample of this.train_loader) {
-                    sampleNum++;
-                    log(`Training sample ${sampleNum}...`);
-                    // Convert image to tensor and reshape
-                    let x = torch.tensor(sample['image'], 'gpu', true);
-                    // Reshape to [batch_size, input_size]
-                    x = x.reshape([1, this.model.input_size]);  // Add batch dimension of 1
-                    log(`Input shape after reshape: [${x.shape}]`);
-                    
-                    let y = torch.tensor([sample['label']], 'gpu', true, {dtype: 'int64'});
-                    // No need to reshape y since it's a single label
-
-                    log(`Label shape [${y.shape}]`);
-                    log(`Label: [${y.data}]`);
-            
-                    let y_pred = this.model.forward(x);
-                    log(`Prediction shape [${y_pred.shape}]`);
-                    log(`Prediction: [${y_pred.data}]`);
-            
-                    loss = this.loss_fn(y_pred, y);
-            
-                    this.loss_fn.backward();
-                    this.optimizer.step();
-            
-                    this.optimizer.zero_grad();
-                }
-            }
-
-            run_testing_epoch() {
-                log(`Starting testing pass for epoch ${this.curr_epoch}...`);
-            
-                let total_loss = 0;  // Add 'let' declarations
-                let total_correct = 0;
+            train(train_x, train_y) {
+                let model = new BloodMNISTNet(this.in_size, this.hidden_size, this.out_size);
+                let loss_fn = new nn.CrossEntropyLoss();
+                let optimizer = new optim.Adam(model.parameters(), 3e-3);
                 
-                for (const sample of this.test_loader) {
-                    // Add reshape operations similar to training
-                    let x = torch.tensor(sample['image'], 'gpu', true);
-                    x = x.reshape([1, this.model.input_size]);
+                const num_samples = train_x.shape[0];
+                const num_batches = Math.floor(num_samples / this.batch_size);
+                const epochs = 3; // You can adjust this
+
+                log_in_div(`Training with ${num_samples} samples in ${num_batches} batches for ${epochs} epochs`);
+                
+                for (let epoch = 0; epoch < epochs; epoch++) {
+                    let epoch_loss = 0;
                     
-                    let y = torch.tensor([sample['label']], 'gpu', true, {dtype: 'int64'});
-            
-                    let y_pred = this.model.forward(x);
-                    const loss = this.loss_fn.forward(y_pred, y);
-                    total_loss += loss.data;
+                    for (let i = 0; i < num_batches; i++) {
+                        const start_idx = i * this.batch_size;
+                        const end_idx = start_idx + this.batch_size;
+                        
+                        // Get batch
+                        let batch_x_data = train_x.data.slice(start_idx, end_idx);
+                        let batch_x = torch.tensor(batch_x_data);
+
+                        let batch_y_data = train_y.data.slice(start_idx, end_idx);
+                        let batch_y = torch.tensor(batch_y_data);
+                        
+                        // Forward pass
+                        let z = model.forward(batch_x);
+                        let loss = loss_fn.forward(z, batch_y);
+                        epoch_loss += loss.data;
+                        
+                        // Backward pass
+                        loss.backward();
+                        optimizer.step();
+                        optimizer.zero_grad();
+                        
+                        if (i % 10 === 0) {
+                            log_in_div(`Epoch ${epoch + 1}/${epochs}, Batch ${i}/${num_batches}, Loss: ${loss.data}`);
+                        }
+                    }
+                    
+                    const avg_loss = epoch_loss / num_batches;
+                    log_in_div(`Epoch ${epoch + 1} complete. Average loss: ${avg_loss}`, 'info');
                 }
-                log(`Testing pass for epoch ${this.curr_epoch} completed. Average loss: ${total_loss / this.test_loader.length}`);
             }
 
-            train() {
-                log(`Starting training...`);
-                for (let i = 0; i < this.epochs; i++) {
-                    this.run_training_epoch();
-                    this.run_testing_epoch();
-                }
-                log(`Training completed after ${this.epochs} epochs.`);
-            }
         }
 
-
-
-        async function main() {
+        // helper to load the data from the jsons
+        async function load_data() {
             try {
-                // Add error handling for fetch
-                const test_data = await fetch('./public/data/bloodmnist_test.json');
-                if (!test_data.ok) throw new Error(`HTTP error! status: ${test_data.status}`);
-                const test_loader = await test_data.json();
-        
-                const train_data = await fetch('./public/data/bloodmnist_train.json');
-                if (!train_data.ok) throw new Error(`HTTP error! status: ${train_data.status}`);
-                const train_loader = await train_data.json();
-        
-                const batch_size = 32; // Add appropriate batch size
-                const model_trainer = new ModelTrainer(3, 28, 8, 10, train_loader, test_loader, batch_size);
-                model_trainer.train();
+                log_in_div(`loading data...`);
+                let train_response = await fetch('public/data/bloodmnist_train.json');
+                
+                if (!train_response.ok) {
+                    throw new Error(`HTTP error! status: ${train_response.status}`);
+                }
+                
+                log_in_div(`fetching completed. Starting JSON parsing...`);
+                const text = await train_response.text();
+                const train_data = JSON.parse(text);
+                
+                // Limit to first 1000 samples for testing
+                const MAX_SAMPLES = 1000;
+                const limited_data = train_data.slice(0, MAX_SAMPLES);
+                log_in_div(`Using ${limited_data.length} samples for training...`);
+
+                const x_data = [];
+                const y_data = [];
+                
+                // Process in smaller chunks
+                const chunkSize = 50;
+                for (let i = 0; i < limited_data.length; i += chunkSize) {
+                    const chunk = limited_data.slice(i, i + chunkSize);
+                    x_data.push(...chunk.map(item => item.image));
+                    y_data.push(...chunk.map(item => item.label));
+                    
+                    log_in_div(`Processed ${i + chunk.length}/${limited_data.length} samples...`);
+                    // Allow UI to update
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
+
+                log_in_div(`formatting data as tensors...`);
+                const x_tensor = torch.tensor(x_data);
+                const y_tensor = torch.tensor(y_data);
+
+                return [x_tensor, y_tensor];
             } catch (error) {
-                log(`Error loading data: ${error.message}`);
-                console.error(error);
+                log_in_div(`Error loading data: ${error.message}`, 'error');
+                throw error;
             }
         }
-        
-        main();
+    
+    
+        // load data and run an experiment
+        async function run_experiment() {
+            let [train_x, train_y] = await load_data();
+            let trainer = new ModelTrainer(2352, 512, 8, 1);
+            trainer.train(train_x, train_y);
+        }
+
+        run_experiment();
     </script>
 </body>
 </html>
